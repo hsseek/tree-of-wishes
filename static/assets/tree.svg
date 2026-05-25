@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 400" shape-rendering="crispEdges" style="image-rendering:pixelated">
+  <!-- Sky / background -->
+  <rect width="320" height="400" fill="#d4f0e8"/>
+
+  <!-- Distant hills -->
+  <rect x="0" y="310" width="320" height="90" fill="#a8d8a0"/>
+  <rect x="0" y="320" width="100" height="80" fill="#b4dea8"/>
+  <rect x="80" y="315" width="120" height="85" fill="#a8d8a0"/>
+  <rect x="180" y="322" width="140" height="78" fill="#b8e0a8"/>
+
+  <!-- Ground -->
+  <rect x="0" y="350" width="320" height="50" fill="#7cb87a"/>
+  <rect x="0" y="360" width="320" height="40" fill="#6aac68"/>
+  <rect x="0" y="370" width="320" height="30" fill="#5a9a58"/>
+
+  <!-- Grass tufts -->
+  <rect x="20" y="348" width="4" height="6" fill="#4a8a48"/>
+  <rect x="18" y="350" width="8" height="4" fill="#4a8a48"/>
+  <rect x="60" y="347" width="4" height="7" fill="#4a8a48"/>
+  <rect x="58" y="350" width="8" height="4" fill="#4a8a48"/>
+  <rect x="130" y="348" width="4" height="6" fill="#4a8a48"/>
+  <rect x="200" y="347" width="4" height="7" fill="#4a8a48"/>
+  <rect x="270" y="348" width="4" height="6" fill="#4a8a48"/>
+
+  <!-- Tree trunk -->
+  <rect x="148" y="270" width="24" height="100" fill="#8b5e3c"/>
+  <rect x="152" y="270" width="8" height="100" fill="#a06a44"/>
+  <rect x="144" y="290" width="4" height="60" fill="#7a5234"/>
+  <rect x="172" y="295" width="4" height="55" fill="#7a5234"/>
+  <!-- Roots -->
+  <rect x="132" y="345" width="20" height="8" fill="#7a5234"/>
+  <rect x="128" y="348" width="8" height="6" fill="#6a4428"/>
+  <rect x="168" y="345" width="20" height="8" fill="#7a5234"/>
+  <rect x="180" y="348" width="8" height="6" fill="#6a4428"/>
+
+  <!-- Branch left -->
+  <rect x="108" y="255" width="44" height="8" fill="#8b5e3c"/>
+  <rect x="108" y="248" width="8" height="16" fill="#7a5234"/>
+  <!-- Branch right -->
+  <rect x="168" y="240" width="44" height="8" fill="#8b5e3c"/>
+  <rect x="204" y="240" width="8" height="16" fill="#7a5234"/>
+  <!-- Branch up -->
+  <rect x="148" y="220" width="8" height="52" fill="#8b5e3c"/>
+
+  <!-- Foliage — dark green base layer -->
+  <rect x="80" y="200" width="160" height="80" fill="#2d7a44"/>
+  <rect x="68" y="220" width="184" height="60" fill="#2d7a44"/>
+  <rect x="92" y="185" width="136" height="40" fill="#2d7a44"/>
+  <rect x="116" y="168" width="88" height="28" fill="#2d7a44"/>
+  <rect x="136" y="155" width="48" height="20" fill="#2d7a44"/>
+
+  <!-- Foliage — mid green layer -->
+  <rect x="88" y="205" width="144" height="68" fill="#3a9455"/>
+  <rect x="76" y="225" width="168" height="50" fill="#3a9455"/>
+  <rect x="100" y="190" width="120" height="35" fill="#3a9455"/>
+  <rect x="124" y="172" width="72" height="25" fill="#3a9455"/>
+  <rect x="140" y="158" width="40" height="18" fill="#3a9455"/>
+
+  <!-- Foliage — highlight layer -->
+  <rect x="108" y="210" width="40" height="20" fill="#4db86a"/>
+  <rect x="164" y="215" width="36" height="18" fill="#4db86a"/>
+  <rect x="136" y="195" width="28" height="14" fill="#4db86a"/>
+  <rect x="152" y="175" width="20" height="10" fill="#4db86a"/>
+
+  <!-- Foliage pixel detail (darker for depth) -->
+  <rect x="80" y="200" width="16" height="16" fill="#246038"/>
+  <rect x="220" y="208" width="16" height="16" fill="#246038"/>
+  <rect x="92" y="232" width="12" height="12" fill="#246038"/>
+  <rect x="212" y="240" width="12" height="12" fill="#246038"/>
+
+  <!-- Small clouds -->
+  <rect x="20" y="60" width="60" height="20" fill="#ffffff" opacity="0.8"/>
+  <rect x="28" y="52" width="44" height="12" fill="#ffffff" opacity="0.8"/>
+  <rect x="16" y="68" width="68" height="12" fill="#ffffff" opacity="0.8"/>
+
+  <rect x="220" y="40" width="76" height="24" fill="#ffffff" opacity="0.8"/>
+  <rect x="228" y="32" width="60" height="14" fill="#ffffff" opacity="0.8"/>
+  <rect x="216" y="50" width="84" height="16" fill="#ffffff" opacity="0.8"/>
+
+  <!-- Sun -->
+  <rect x="260" y="30" width="32" height="32" fill="#ffe066"/>
+  <rect x="268" y="22" width="16" height="8" fill="#ffe066"/>
+  <rect x="268" y="62" width="16" height="8" fill="#ffe066"/>
+  <rect x="252" y="38" width="8" height="16" fill="#ffe066"/>
+  <rect x="300" y="38" width="8" height="16" fill="#ffe066"/>
+  <rect x="256" y="26" width="8" height="8" fill="#ffe066"/>
+  <rect x="296" y="26" width="8" height="8" fill="#ffe066"/>
+  <rect x="256" y="58" width="8" height="8" fill="#ffe066"/>
+  <rect x="296" y="58" width="8" height="8" fill="#ffe066"/>
+  <rect x="266" y="34" width="28" height="24" fill="#ffd700"/>
+</svg>

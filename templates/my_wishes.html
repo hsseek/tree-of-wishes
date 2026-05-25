@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% set active_page = 'my-wishes' %}
+{% block title %}My Wishes — Tree of Wishes{% endblock %}
+
+{% block content %}
+<div class="page-content">
+  <div class="page-header">
+    <h1 class="page-title" data-i18n="myWishes.title">My Wishes</h1>
+  </div>
+  <div class="content-panel">
+    <div class="my-wishes-notice">
+      <p>🔒</p>
+      <p data-i18n="myWishes.loginNotice">Sign-in is coming soon.</p>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  await i18n.init();
+  document.getElementById('lang-toggle')?.addEventListener('click', async () => {
+    const next = i18n.getLang() === 'en' ? 'ko' : 'en';
+    await i18n.setLang(next);
+    document.getElementById('lang-toggle').textContent = next === 'en' ? '한국어' : 'English';
+  });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% set active_page = 'columbarium' %}
+{% block title %}Columbarium — Tree of Wishes{% endblock %}
+{% block body_class %}dark-theme{% endblock %}
+
+{% block content %}
+<div class="page-content page-content-columbarium">
+  <div class="columbarium-topbar">
+    <div class="page-header-inline">
+      <h1 class="page-title" data-i18n="columbarium.title">Columbarium</h1>
+      <p class="page-subtitle" data-i18n="columbarium.subtitle">Memorial of wishes that have passed</p>
+    </div>
+    <form id="search-form" class="search-bar-inline">
+      <input id="search-input" type="search"
+        data-i18n-placeholder="search.placeholder" placeholder="Search wishes…" />
+      <button type="submit" data-i18n="nav.search">Search</button>
+    </form>
+  </div>
+
+  <div id="search-results"></div>
+
+  <div class="columbarium-frame">
+    <div id="wish-grid"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>const PAGE_BOARD = 'columbarium';</script>
+<script src="/static/js/grid.js"></script>
+<script src="/static/js/modal.js"></script>
+<script src="/static/js/app.js"></script>
+{% endblock %}

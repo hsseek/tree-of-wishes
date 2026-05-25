@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% set active_page = 'settings' %}
+{% block title %}Settings — Tree of Wishes{% endblock %}
+
+{% block content %}
+<div class="page-content">
+  <div class="page-header">
+    <h1 class="page-title" data-i18n="settings.title">Settings</h1>
+  </div>
+  <div class="content-panel">
+    <div class="setting-row">
+      <span class="setting-label" data-i18n="settings.language">Language</span>
+      <select id="lang-select">
+        <option value="en">English</option>
+        <option value="ko">한국어</option>
+      </select>
+    </div>
+    <div id="save-status" data-i18n="settings.saved">Settings saved</div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="/static/js/settings.js"></script>
+{% endblock %}

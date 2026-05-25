@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% set active_page = 'about' %}
+{% block title %}About — Tree of Wishes{% endblock %}
+
+{% block content %}
+<div class="page-content">
+  <div class="page-header">
+    <h1 class="page-title" data-i18n="about.title">About Tree of Wishes</h1>
+  </div>
+  <div class="content-panel">
+    <p class="about-body" data-i18n="about.body">Tree of Wishes is an anonymous, public wish board.</p>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  await i18n.init();
+  document.getElementById('lang-toggle')?.addEventListener('click', async () => {
+    const next = i18n.getLang() === 'en' ? 'ko' : 'en';
+    await i18n.setLang(next);
+    document.getElementById('lang-toggle').textContent = next === 'en' ? '한국어' : 'English';
+  });
+});
+</script>
+{% endblock %}

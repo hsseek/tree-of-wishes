@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Tree of Wishes{% endblock %}</title>
+  <link rel="stylesheet" href="/static/css/main.css" />
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+
+<header class="site-header">
+  <nav class="nav-left">
+    <a href="/tree" class="nav-link nav-primary {% if active_page == 'tree' %}active{% endif %}" data-i18n="nav.tree">Tree of Wishes</a>
+    <a href="/columbarium" class="nav-link nav-primary {% if active_page == 'columbarium' %}active{% endif %}" data-i18n="nav.columbarium">Columbarium</a>
+  </nav>
+  <div class="nav-spacer"></div>
+  <nav class="nav-right">
+    <a href="/settings" class="nav-link {% if active_page == 'settings' %}active{% endif %}" data-i18n="nav.settings">Settings</a>
+    <a href="/about" class="nav-link {% if active_page == 'about' %}active{% endif %}" data-i18n="nav.about">About</a>
+    <a href="/my-wishes" class="nav-link {% if active_page == 'my-wishes' %}active{% endif %}" data-i18n="nav.myWishes">My Wishes</a>
+    <button id="lang-toggle">한국어</button>
+  </nav>
+</header>
+
+<div class="page-wrap">
+  {% block content %}{% endblock %}
+</div>
+
+<!-- Shared modal -->
+<div id="modal-backdrop"></div>
+<div id="wish-modal" role="dialog" aria-modal="true">
+  <div class="modal-header">
+    <h3>✦</h3>
+    <button class="modal-close" aria-label="Close">×</button>
+  </div>
+  <div class="modal-body"></div>
+</div>
+
+<script src="/static/js/i18n.js"></script>
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>

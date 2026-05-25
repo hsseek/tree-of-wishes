@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% set active_page = 'tree' %}
+{% block title %}Tree of Wishes{% endblock %}
+
+{% block content %}
+<div class="page-content page-content-tree">
+  <div class="tree-topbar">
+    <div class="page-header-inline">
+      <h1 class="page-title" data-i18n="tree.title">Tree of Wishes</h1>
+      <p class="page-subtitle" data-i18n="tree.subtitle">Leave your wish upon the tree</p>
+    </div>
+    <div class="tree-actions">
+      <form id="search-form" class="search-bar-inline">
+        <input id="search-input" type="search"
+          data-i18n-placeholder="search.placeholder" placeholder="Search wishes…" />
+        <button type="submit" data-i18n="nav.search">Search</button>
+      </form>
+      <button id="btn-new-wish" class="btn-make-wish" data-i18n="tree.makeWish">Make a Wish</button>
+    </div>
+  </div>
+
+  <div id="search-results"></div>
+  <div id="wish-grid"></div>
+</div>
+
+<!-- New Wish overlay -->
+<div id="new-wish-overlay" aria-modal="true" role="dialog">
+  <div class="new-wish-panel">
+    <h2 data-i18n="tree.makeWish">Make a Wish</h2>
+    <form id="new-wish-form" onsubmit="submitNewWish(event)">
+      <div class="form-field">
+        <label for="nw-text" data-i18n="wish.text">Your wish</label>
+        <textarea id="nw-text" name="text" rows="4" required
+          data-i18n-placeholder="wish.textPlaceholder"
+          placeholder="What do you wish for?"></textarea>
+      </div>
+      <div class="form-field">
+        <label for="nw-name" data-i18n="wish.name">Your name</label>
+        <input id="nw-name" name="name" type="text"
+          data-i18n-placeholder="wish.namePlaceholder"
+          placeholder="Anonymous" />
+      </div>
+      <div class="form-field">
+        <label for="nw-due" data-i18n="wish.dueDate">Due date</label>
+        <input id="nw-due" name="due_date" type="date" required />
+      </div>
+      <div class="form-field">
+        <label for="nw-pw" data-i18n="wish.password">Password</label>
+        <input id="nw-pw" name="password" type="password" required
+          data-i18n-placeholder="wish.passwordPlaceholder"
+          placeholder="Remember this — it cannot be recovered" />
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn-secondary" onclick="closeNewWish()" data-i18n="btn.cancel">Cancel</button>
+        <button type="submit" class="btn-primary" data-i18n="wish.submit">Place wish</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>const PAGE_BOARD = 'tree';</script>
+<script src="/static/js/grid.js"></script>
+<script src="/static/js/modal.js"></script>
+<script src="/static/js/app.js"></script>
+{% endblock %}
