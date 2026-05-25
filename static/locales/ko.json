@@ -1,14 +1,14 @@
 {
-  "nav.tree": "소원 나무",
+  "nav.tree": "소원의 나무",
   "nav.columbarium": "납골당",
   "nav.settings": "설정",
   "nav.about": "소개",
   "nav.myWishes": "내 소원",
   "nav.search": "검색",
 
-  "tree.title": "소원 나무",
+  "tree.title": "소원의 나무",
   "tree.subtitle": "나무에 소원을 달아보세요",
-  "tree.makeWish": "소원 빌기",
+  "tree.makeWish": "소원 적기",
 
   "columbarium.title": "납골당",
   "columbarium.subtitle": "이루어지지 못한 소원들의 안식처",
@@ -18,11 +18,11 @@
   "settings.save": "저장",
   "settings.saved": "저장되었습니다",
 
-  "about.title": "소원 나무 소개",
-  "about.body": "소원 나무는 익명으로 소원을 나눌 수 있는 공개 게시판입니다. 나무에 소원을 달고, 이루어지길 기다려보세요. 기한이 지나도록 이루어지지 않은 소원은 납골당으로 옮겨져 조용히 추모됩니다.\n\n소원은 기본적으로 익명입니다. 비밀번호는 소원을 수정하거나 이루었음을 표시할 때 사용되지만, 분실 시 복구가 불가능하니 잊지 마세요.\n\n소원 나무를 즐겨주세요.",
+  "about.title": "소원의 나무 소개",
+  "about.body": "소원의 나무는 익명으로 소원을 적을 수 있는 공간입니다. 나무에 소원을 달고, 이루어지길 기다려보세요. 기한이 지나도록 이루어지지 않은 소원은 납골당으로 옮겨져 조용히 추모됩니다.\n\n소원은 기본적으로 익명입니다. 비밀번호는 소원을 수정하거나 이루었음을 표시할 때 사용되지만, 분실 시 복구가 불가능하니 잊지 마세요.",
 
   "myWishes.title": "내 소원",
-  "myWishes.loginNotice": "로그인 기능이 곧 추가됩니다. 계정이 생기면 여기서 내 소원을 관리할 수 있습니다.",
+  "myWishes.loginNotice": "로그인 기능이 추가될 예정입니다. 계정이 생기면 여기서 내 소원을 관리할 수 있습니다.",
 
   "wish.text": "소원",
   "wish.textPlaceholder": "어떤 소원을 빌고 싶으신가요?",

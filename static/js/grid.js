@@ -130,10 +130,11 @@ class FireflyCanvas {
     }
 
     const W = this.container.offsetWidth || window.innerWidth;
-    const canvasH = Math.max(n * 30, window.innerHeight * 1.2);
+    const density_coeff = 1.5; // current density; double → twice as dense, halve → half as dense
+    const canvasH = Math.max(n * 30, window.innerHeight * 1.2) / density_coeff;
     this.container.style.height = canvasH + 'px';
 
-    const positions = _scatter(n, W, canvasH, 30, 40);
+    const positions = _scatter(n, W, canvasH, 30 / density_coeff, 40);
 
     this.wishes.forEach((wish, i) => {
       const { x, y } = positions[i];
