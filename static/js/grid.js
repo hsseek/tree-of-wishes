@@ -196,8 +196,8 @@ class FireflyCanvas {
       </div>`;
 
     wrap.addEventListener('click', () => this.onOpen(wish));
-    wrap.addEventListener('mouseenter', () => this.popover.show(wish, wrap));
-    wrap.addEventListener('mouseleave', () => this.popover.hide());
+    wrap.addEventListener('pointerenter', e => { if (e.pointerType !== 'touch') this.popover.show(wish, wrap); });
+    wrap.addEventListener('pointerleave', e => { if (e.pointerType !== 'touch') this.popover.hide(); });
 
     return wrap;
   }
@@ -298,8 +298,8 @@ class ColumbariumWall {
       <div class="niche-likes">♡ ${wish.likes}</div>`;
 
     el.addEventListener('click', () => this.onOpen(wish));
-    el.addEventListener('mouseenter', () => this.popover.show(wish, el));
-    el.addEventListener('mouseleave', () => this.popover.hide());
+    el.addEventListener('pointerenter', e => { if (e.pointerType !== 'touch') this.popover.show(wish, el); });
+    el.addEventListener('pointerleave', e => { if (e.pointerType !== 'touch') this.popover.hide(); });
 
     return el;
   }
