@@ -44,12 +44,14 @@
         <label for="nw-due" data-i18n="wish.dueDate">Due date</label>
         <input id="nw-due" name="due_date" type="date" required />
       </div>
+      {% if not current_user %}
       <div class="form-field">
         <label for="nw-pw" data-i18n="wish.password">Password</label>
         <input id="nw-pw" name="password" type="password" required
           data-i18n-placeholder="wish.passwordPlaceholder"
           placeholder="Remember this — it cannot be recovered" />
       </div>
+      {% endif %}
       <div class="form-actions">
         <button type="button" class="btn-secondary" onclick="closeNewWish()" data-i18n="btn.cancel">Cancel</button>
         <button type="submit" class="btn-primary" data-i18n="wish.submit">Place wish</button>

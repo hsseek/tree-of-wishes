@@ -1,10 +1,22 @@
 {
   "nav.tree": "소원의 나무",
   "nav.columbarium": "납골당",
-  "nav.settings": "설정",
   "nav.about": "소개",
+  "nav.report": "제안하기",
   "nav.myWishes": "내 소원",
+  "nav.signOut": "로그아웃",
   "nav.search": "검색",
+
+  "report.title": "신고 및 제안",
+  "report.typeLabel": "유형",
+  "report.typeAbuse": "악성 콘텐츠 신고",
+  "report.typeSuggestion": "제안",
+  "report.messageLabel": "내용",
+  "report.messagePlaceholder": "내용을 입력해 주세요…",
+  "report.submit": "보내기",
+  "report.sending": "보내는 중…",
+  "report.success": "전송되었습니다. 감사합니다!",
+  "report.error": "전송에 실패했습니다. 다시 시도해 주세요.",
 
   "tree.title": "소원의 나무",
   "tree.subtitle": "나무에 소원을 달아보세요",
@@ -19,10 +31,12 @@
   "settings.saved": "저장되었습니다",
 
   "about.title": "소원의 나무 소개",
-  "about.body": "소원의 나무는 익명으로 소원을 적을 수 있는 공간입니다. 나무에 소원을 달고, 이루어지길 기다려보세요. 기한이 지나도록 이루어지지 않은 소원은 납골당으로 옮겨져 조용히 추모됩니다.\n\n소원은 기본적으로 익명입니다. 비밀번호는 소원을 수정하거나 이루었음을 표시할 때 사용되지만, 분실 시 복구가 불가능하니 잊지 마세요.",
+  "about.body": "소원의 나무는 익명으로 소원을 적을 수 있는 공간입니다. 나무에 소원을 달고, 이루어지길 기다려보세요. 기한이 지나도록 이루어지지 않은 소원은 납골당으로 옮겨져 조용히 추모됩니다.\n\n로그인하면 언제든지 소원을 비밀번호 없이 수정하거나 이루었음으로 표시할 수 있습니다. 로그인하지 않은 경우, 소원을 적을 때 비밀번호를 설정해야 하며 분실 시 복구가 불가능하니 잘 기억해 두세요.",
 
   "myWishes.title": "내 소원",
-  "myWishes.loginNotice": "로그인 기능이 추가될 예정입니다. 계정이 생기면 여기서 내 소원을 관리할 수 있습니다.",
+  "myWishes.loginNotice": "로그인하면 내 소원을 확인하고 관리할 수 있습니다. 로그인한 사용자는 비밀번호 없이 소원을 수정, 이루었음 표시, 삭제할 수 있습니다.",
+  "myWishes.loginPrompt": "로그인하여 내 소원을 확인하고 관리하세요.",
+  "myWishes.noWishes": "아직 소원이 없어요.",
 
   "wish.text": "소원",
   "wish.textPlaceholder": "어떤 소원을 빌고 싶으신가요?",

@@ -7,7 +7,8 @@ class WishModal {
     this.el = document.getElementById('wish-modal');
     this.backdrop = document.getElementById('modal-backdrop');
     this._currentWish = null;
-    this._storedPassword = null;
+    this._storedPassword = null; // null = owner (no password needed), string = verified password
+    this._isOwner = false;
 
     this.el.querySelector('.modal-close').addEventListener('click', () => this.close());
     this.backdrop.addEventListener('click', () => this.close());
@@ -17,10 +18,19 @@ class WishModal {
   async open(wish) {
     this._currentWish = wish;
     this._storedPassword = null;
+    this._isOwner = typeof CURRENT_USER_ID !== 'undefined'
+      && CURRENT_USER_ID !== null
+      && wish.owner_id === CURRENT_USER_ID;
+
     fetch(`/api/wishes/${wish.id}/view`, { method: 'POST' });
     this._renderMain(wish);
     this.el.classList.add('open');
     this.backdrop.classList.add('open');
+
+    // Owners skip the unlock step entirely
+    if (this._isOwner && this.board === 'tree') {
+      this._renderEditPanel();
+    }
   }
 
   close() {
@@ -41,7 +51,6 @@ class WishModal {
     const createdStr  = wish.created_at  ? new Date(wish.created_at).toLocaleDateString()  : '—';
     const fulfilledStr = wish.fulfilled_at ? new Date(wish.fulfilled_at).toLocaleDateString() : null;
 
-    // Attachment: thumbnail for images, link for others
     let attachmentHtml = '';
     if (wish.has_attachment) {
       const isImage = (wish.attachment_mimetype || '').startsWith('image/');
@@ -61,6 +70,9 @@ class WishModal {
       }
     }
 
+    // Show unlock section only for non-owners on the tree board
+    const showUnlock = this.board === 'tree' && !this._isOwner;
+
     body.innerHTML = `
       <div class="modal-status ${wish.status}">${statusLabel}</div>
       <div class="modal-text">${_esc(wish.text)}</div>
@@ -77,7 +89,7 @@ class WishModal {
       </div>
       <div class="modal-actions" id="modal-actions">
         <button class="btn-like" id="btn-like">${i18n.t('wish.likeBtn')}</button>
-        ${this.board === 'tree' ? this._unlockHtml() : ''}
+        ${showUnlock ? this._unlockHtml() : ''}
       </div>
       <div id="edit-panel" style="display:none"></div>
     `;
@@ -93,6 +105,11 @@ class WishModal {
           placeholder="${i18n.t('wish.passwordPlaceholderShort')}" class="unlock-input" />
         <button id="btn-unlock" class="btn-secondary">${i18n.t('wish.unlock')}</button>
       </div>`;
+  }
+
+  // Append password to FormData only when a password was entered (non-owners have null)
+  _appendPassword(fd) {
+    if (this._storedPassword !== null) fd.append('password', this._storedPassword);
   }
 
   async _doLike() {
@@ -137,8 +154,9 @@ class WishModal {
     const isFulfilled = wish.status === 'fulfilled';
     panel.style.display = '';
 
-    // Attachment controls only visible when wish is fulfilled
-    const attachmentControls = isFulfilled ? `
+    // Owners can attach files regardless of status; others only on fulfilled wishes
+    const showAttachment = isFulfilled || this._isOwner;
+    const attachmentControls = showAttachment ? `
       <div class="edit-row">
         ${wish.has_attachment
           ? `<button id="btn-remove-attachment" class="btn-danger-sm">${i18n.t('wish.removeAttachment')}</button>`
@@ -175,7 +193,7 @@ class WishModal {
     btn.disabled = true;
 
     const fd = new FormData();
-    fd.append('password', this._storedPassword);
+    this._appendPassword(fd);
     fd.append('text', document.getElementById('edit-text').value);
     const file = document.getElementById('edit-attachment')?.files[0];
     if (file) fd.append('attachment', file);
@@ -185,7 +203,6 @@ class WishModal {
       const updated = await resp.json();
       this._currentWish = updated;
       _showToast('Saved!', 'success');
-      // Refresh modal content
       this.close();
       if (window.wishGrid) window.wishGrid.init();
     } else {
@@ -198,7 +215,7 @@ class WishModal {
 
   async _doRemoveAttachment() {
     const fd = new FormData();
-    fd.append('password', this._storedPassword);
+    this._appendPassword(fd);
     fd.append('remove_attachment', 'true');
     const resp = await fetch(`/api/wishes/${this._currentWish.id}`, { method: 'PATCH', body: fd });
     if (resp.ok) {
@@ -206,7 +223,6 @@ class WishModal {
       this._currentWish = updated;
       _showToast('Attachment removed', 'success');
       this._renderMain(updated);
-      // Re-unlock state
       document.querySelector('.unlock-section')?.remove();
       this._renderEditPanel();
     }
@@ -219,7 +235,7 @@ class WishModal {
       : `/api/wishes/${wish.id}/fulfill`;
 
     const fd = new FormData();
-    fd.append('password', this._storedPassword);
+    this._appendPassword(fd);
     const resp = await fetch(endpoint, { method: 'POST', body: fd });
     if (resp.ok) {
       const updated = await resp.json();
@@ -238,7 +254,7 @@ class WishModal {
   async _doDelete() {
     if (!confirm(i18n.t('wish.confirmDelete'))) return;
     const fd = new FormData();
-    fd.append('password', this._storedPassword);
+    this._appendPassword(fd);
     const resp = await fetch(`/api/wishes/${this._currentWish.id}`, { method: 'DELETE', body: fd });
     if (resp.ok) {
       _showToast('Wish deleted', 'success');
@@ -259,14 +275,3 @@ function _esc(str) {
     .replace(/"/g, '&quot;');
 }
 
-function _showToast(msg, type = 'info') {
-  const toast = document.createElement('div');
-  toast.className = `toast toast-${type}`;
-  toast.textContent = msg;
-  document.body.appendChild(toast);
-  requestAnimationFrame(() => toast.classList.add('toast-show'));
-  setTimeout(() => {
-    toast.classList.remove('toast-show');
-    setTimeout(() => toast.remove(), 400);
-  }, 2800);
-}

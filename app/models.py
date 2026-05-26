@@ -48,14 +48,14 @@ def effective_age_expr():
 
 
 class User(Base):
-    """Stub for future registered user support (OAuth/Google)."""
     __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True, index=True)
-    email = Column(String, unique=True, nullable=False)
-    google_id = Column(String, nullable=True)   # OAuth extension point
+    id           = Column(Integer, primary_key=True, index=True)
+    email        = Column(String, unique=True, nullable=False)
+    google_id    = Column(String, nullable=True)
     display_name = Column(String, nullable=True)
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    avatar_url   = Column(String, nullable=True)
+    created_at   = Column(DateTime, nullable=False, default=datetime.utcnow)
 
     wishes = relationship("Wish", back_populates="owner")
 

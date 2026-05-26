@@ -14,7 +14,8 @@ const i18n = (() => {
   }
 
   async function load(lang) {
-    const resp = await fetch(`/static/locales/${lang}.json`);
+    const v = typeof TOW_SV !== 'undefined' ? `?v=${TOW_SV}` : '';
+    const resp = await fetch(`/static/locales/${lang}.json${v}`);
     if (!resp.ok) throw new Error(`Failed to load locale ${lang}`);
     return resp.json();
   }

@@ -1,19 +1,25 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
+from starlette.middleware.sessions import SessionMiddleware
 
-from .database import engine, Base
+from .config import SESSION_SECRET
+from .database import engine, Base, run_migrations
 from .models import *  # ensure all models are registered before create_all
 from .routes.api import router as api_router
+from .routes.auth import router as auth_router
 from .routes.pages import router as pages_router
 
 Base.metadata.create_all(bind=engine)
+run_migrations()
 
 app = FastAPI(title="Tree of Wishes", version="0.1.0")
 
+app.add_middleware(SessionMiddleware, secret_key=SESSION_SECRET)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 app.include_router(pages_router)
+app.include_router(auth_router)
 app.include_router(api_router)
 
 

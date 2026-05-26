@@ -7,12 +7,63 @@
   <div class="page-header">
     <h1 class="page-title" data-i18n="myWishes.title">My Wishes</h1>
   </div>
-  <div class="content-panel">
-    <div class="my-wishes-notice">
-      <p>🔒</p>
-      <p data-i18n="myWishes.loginNotice">Sign-in is coming soon.</p>
+
+  {% if current_user %}
+    {# ── Logged-in view ── #}
+    <div class="content-panel my-wishes-panel">
+      <div class="my-wishes-user">
+        {% if current_user.avatar_url %}
+          <img class="user-avatar" src="{{ current_user.avatar_url }}" alt="" />
+        {% else %}
+          <div class="user-avatar user-avatar-initial">{{ (current_user.display_name or current_user.email)[0].upper() }}</div>
+        {% endif %}
+        <span class="user-name">{{ current_user.display_name or current_user.email }}</span>
+      </div>
+
+      {% if wishes %}
+        <div class="my-wishes-list">
+          {% for wish in wishes %}
+          <a class="my-wish-row"
+             href="/{{ wish.board }}?open={{ wish.id }}"
+             title="{{ wish.text }}">
+            <span class="my-wish-status {{ wish.status.value }}">
+              {% if wish.status.value == 'active' %}✦{% elif wish.status.value == 'fulfilled' %}✦{% else %}◈{% endif %}
+            </span>
+            <span class="my-wish-text">{{ wish.text[:90] }}{% if wish.text|length > 90 %}…{% endif %}</span>
+            <span class="my-wish-meta">
+              {{ wish.board }}
+              · {{ wish.due_date.strftime('%Y-%m-%d') }}
+              · ♡ {{ wish.likes }}
+            </span>
+          </a>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="my-wishes-empty" data-i18n="myWishes.noWishes">You haven't made any wishes yet.</p>
+      {% endif %}
     </div>
-  </div>
+
+  {% else %}
+    {# ── Logged-out view ── #}
+    <div class="content-panel login-panel">
+      <p class="login-prompt" data-i18n="myWishes.loginPrompt">Sign in to view and manage your wishes.</p>
+      <div class="oauth-buttons">
+        {% if google_enabled %}
+        <a href="/auth/google" class="btn-oauth btn-oauth-google">
+          <svg class="oauth-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+          </svg>
+          Sign in with Google
+        </a>
+        {% else %}
+        <p class="login-unavailable">Sign-in is not configured on this server.</p>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
 </div>
 {% endblock %}
 

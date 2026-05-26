@@ -16,18 +16,24 @@
   </nav>
   <div class="nav-spacer"></div>
   <nav class="nav-right">
-    <a href="/settings" class="nav-link {% if active_page == 'settings' %}active{% endif %}" data-i18n="nav.settings">Settings</a>
-    <a href="/about" class="nav-link {% if active_page == 'about' %}active{% endif %}" data-i18n="nav.about">About</a>
     <a href="/my-wishes" class="nav-link {% if active_page == 'my-wishes' %}active{% endif %}" data-i18n="nav.myWishes">My Wishes</a>
+    <a href="/about" class="nav-link {% if active_page == 'about' %}active{% endif %}" data-i18n="nav.about">About</a>
+    <button id="btn-report-nav" class="nav-link nav-btn" data-i18n="nav.report">Report</button>
+    {% if current_user %}
+      <a href="/auth/logout" class="nav-link" data-i18n="nav.signOut">Sign Out</a>
+    {% endif %}
     <button id="lang-toggle">한국어</button>
   </nav>
   <button class="nav-hamburger" id="nav-hamburger" aria-label="Menu" aria-expanded="false" aria-controls="nav-mobile-menu">☰</button>
 </header>
 
 <div id="nav-mobile-menu" class="nav-mobile-menu" aria-hidden="true">
-  <a href="/settings" class="nav-link{% if active_page == 'settings' %} active{% endif %}" data-i18n="nav.settings">Settings</a>
-  <a href="/about" class="nav-link{% if active_page == 'about' %} active{% endif %}" data-i18n="nav.about">About</a>
   <a href="/my-wishes" class="nav-link{% if active_page == 'my-wishes' %} active{% endif %}" data-i18n="nav.myWishes">My Wishes</a>
+  <a href="/about" class="nav-link{% if active_page == 'about' %} active{% endif %}" data-i18n="nav.about">About</a>
+  <button id="btn-report-mobile" class="nav-link nav-btn" data-i18n="nav.report">Report</button>
+  {% if current_user %}
+    <a href="/auth/logout" class="nav-link" data-i18n="nav.signOut">Sign Out</a>
+  {% endif %}
   <button id="lang-toggle-mobile" class="nav-link nav-lang-btn">한국어</button>
 </div>
 
@@ -45,9 +51,49 @@
   <div class="modal-body"></div>
 </div>
 
+<!-- Report overlay -->
+<div id="report-overlay" aria-modal="true" role="dialog">
+  <div class="new-wish-panel">
+    <h2 data-i18n="report.title">Report / Suggest</h2>
+    <form id="report-form">
+      <div class="form-field">
+        <label data-i18n="report.typeLabel">Type</label>
+        <select name="type" id="report-type">
+          <option value="abuse" data-i18n="report.typeAbuse">Report abuse</option>
+          <option value="suggestion" data-i18n="report.typeSuggestion">Suggestion</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label data-i18n="report.messageLabel">Message</label>
+        <textarea name="message" rows="5" required
+          data-i18n-placeholder="report.messagePlaceholder"
+          placeholder="Describe the issue or your suggestion…"></textarea>
+      </div>
+      <div class="form-actions">
+        <button type="button" id="btn-report-cancel" class="btn-secondary" data-i18n="btn.cancel">Cancel</button>
+        <button type="submit" id="btn-report-submit" class="btn-primary" data-i18n="report.submit">Send</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>const CURRENT_USER_ID = {{ current_user.id if current_user else 'null' }}; const TOW_SV = '{{ sv }}';</script>
 <script src="/static/js/i18n.js?v={{ sv }}"></script>
 <script>
 (function () {
+  function _showToast(msg, type) {
+    var toast = document.createElement('div');
+    toast.className = 'toast toast-' + (type || 'info');
+    toast.textContent = msg;
+    document.body.appendChild(toast);
+    requestAnimationFrame(function () { toast.classList.add('toast-show'); });
+    setTimeout(function () {
+      toast.classList.remove('toast-show');
+      setTimeout(function () { toast.remove(); }, 400);
+    }, 2800);
+  }
+  window._showToast = _showToast;
+
   var menu, hamburger;
   document.addEventListener('DOMContentLoaded', function () {
     menu      = document.getElementById('nav-mobile-menu');
@@ -77,6 +123,53 @@
       menu && menu.classList.remove('open');
       var desktop = document.getElementById('lang-toggle');
       desktop && desktop.click();
+    });
+
+    /* Report overlay */
+    var reportOverlay = document.getElementById('report-overlay');
+    var reportForm    = document.getElementById('report-form');
+
+    function openReport() {
+      menu && menu.classList.remove('open');
+      reportOverlay && reportOverlay.classList.add('open');
+    }
+    function closeReport() {
+      reportOverlay && reportOverlay.classList.remove('open');
+    }
+
+    document.getElementById('btn-report-nav')    && document.getElementById('btn-report-nav').addEventListener('click', openReport);
+    document.getElementById('btn-report-mobile') && document.getElementById('btn-report-mobile').addEventListener('click', openReport);
+    document.getElementById('btn-report-cancel') && document.getElementById('btn-report-cancel').addEventListener('click', closeReport);
+
+    reportOverlay && reportOverlay.addEventListener('click', function (e) {
+      if (e.target === reportOverlay) closeReport();
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && reportOverlay && reportOverlay.classList.contains('open')) closeReport();
+    });
+
+    reportForm && reportForm.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      var btn = document.getElementById('btn-report-submit');
+      btn.textContent = i18n.t('report.sending');
+      btn.disabled = true;
+
+      var fd = new FormData(reportForm);
+      try {
+        var resp = await fetch('/api/report', { method: 'POST', body: fd });
+        if (resp.ok) {
+          closeReport();
+          reportForm.reset();
+          _showToast(i18n.t('report.success'), 'success');
+        } else {
+          _showToast(i18n.t('report.error'), 'error');
+        }
+      } catch (_) {
+        _showToast(i18n.t('report.error'), 'error');
+      }
+      btn.textContent = i18n.t('report.submit');
+      btn.disabled = false;
     });
   });
 

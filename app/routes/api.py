@@ -1,5 +1,7 @@
 import uuid
 import mimetypes
+import smtplib
+from email.message import EmailMessage
 from datetime import datetime, date
 from pathlib import Path
 from typing import Optional
@@ -21,7 +23,10 @@ from ..services.rate_limit import (
     can_like, record_like,
     can_record_view, record_view,
 )
-from ..config import MAX_FILE_SIZE_BYTES, ALLOWED_MIME_TYPES, UPLOAD_DIR
+from ..config import (
+    MAX_FILE_SIZE_BYTES, ALLOWED_MIME_TYPES, UPLOAD_DIR,
+    REPORT_EMAIL, SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS,
+)
 
 router = APIRouter(prefix="/api")
 
@@ -32,6 +37,16 @@ def _hash_password(plain: str) -> str:
 
 def _verify_password(plain: str, hashed: str) -> bool:
     return bcrypt.checkpw(plain.encode(), hashed.encode())
+
+
+def _check_auth(wish: "Wish", password: Optional[str], request: Request) -> None:
+    """Pass if the session user owns the wish; otherwise require a valid password."""
+    user_id = request.session.get("user_id")
+    if user_id and wish.owner_id is not None and wish.owner_id == user_id:
+        return
+    if not wish.password_hash or not _verify_password(password or "", wish.password_hash):
+        raise HTTPException(403, "Wrong password")
+
 
 PAGE_SIZE = 50
 
@@ -59,6 +74,7 @@ def _wish_to_dict(wish: Wish) -> dict:
         "attachment_filename": wish.attachment_filename,
         "attachment_mimetype": wish.attachment_mimetype,
         "has_password": wish.password_hash is not None,
+        "owner_id": wish.owner_id,
     }
 
 
@@ -143,11 +159,15 @@ async def create_wish(
     request: Request,
     text: str = Form(...),
     name: Optional[str] = Form(None),
-    password: str = Form(...),
+    password: Optional[str] = Form(None),
     due_date: str = Form(...),
     attachment: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
 ):
+    user_id = request.session.get("user_id")
+    if not user_id and not password:
+        raise HTTPException(400, "Password is required.")
+
     ip = _client_ip(request)
     if not check_creation_rate(db, ip):
         raise HTTPException(429, "Too many wishes created recently. Please wait.")
@@ -168,8 +188,7 @@ async def create_wish(
     attachment_filename = None
     attachment_mimetype = None
 
-    # Hash password
-    pw_hash = _hash_password(password)
+    pw_hash = _hash_password(password) if password else None
 
     # Enforce tree capacity (evicts oldest if full)
     ensure_tree_capacity(db)
@@ -185,7 +204,7 @@ async def create_wish(
         attachment_path=attachment_path,
         attachment_filename=attachment_filename,
         attachment_mimetype=attachment_mimetype,
-        owner_id=None,  # Extension point: set from auth session when registration is added
+        owner_id=request.session.get("user_id"),
     )
     db.add(wish)
     record_creation(db, ip)
@@ -199,14 +218,14 @@ async def create_wish(
 @router.post("/wishes/{wish_id}/verify")
 def verify_password(
     wish_id: int,
-    password: str = Form(...),
+    request: Request,
+    password: Optional[str] = Form(None),
     db: Session = Depends(get_db),
 ):
     wish = db.query(Wish).filter(Wish.id == wish_id, Wish.board == "tree").first()
     if not wish:
         raise HTTPException(404, "Wish not found")
-    if not wish.password_hash or not _verify_password(password, wish.password_hash):
-        raise HTTPException(403, "Wrong password")
+    _check_auth(wish, password, request)
     return {"ok": True}
 
 
@@ -215,7 +234,8 @@ def verify_password(
 @router.patch("/wishes/{wish_id}")
 async def edit_wish(
     wish_id: int,
-    password: str = Form(...),
+    request: Request,
+    password: Optional[str] = Form(None),
     text: Optional[str] = Form(None),
     remove_attachment: bool = Form(False),
     attachment: Optional[UploadFile] = File(None),
@@ -224,8 +244,9 @@ async def edit_wish(
     wish = db.query(Wish).filter(Wish.id == wish_id, Wish.board == "tree").first()
     if not wish:
         raise HTTPException(404, "Wish not found")
-    if not wish.password_hash or not _verify_password(password, wish.password_hash):
-        raise HTTPException(403, "Wrong password")
+    _check_auth(wish, password, request)
+
+    is_owner = request.session.get("user_id") == wish.owner_id and wish.owner_id is not None
 
     if text is not None:
         wish.text = text.strip()
@@ -239,8 +260,7 @@ async def edit_wish(
         wish.attachment_mimetype = None
 
     if attachment and attachment.filename:
-        # Attachments allowed only on fulfilled wishes (or registered users, when auth is added)
-        if wish.status != WishStatus.fulfilled and wish.owner_id is None:
+        if wish.status != WishStatus.fulfilled and not is_owner:
             raise HTTPException(400, "Attachments can only be added to fulfilled wishes.")
         content = await attachment.read()
         if len(content) > MAX_FILE_SIZE_BYTES:
@@ -271,14 +291,14 @@ async def edit_wish(
 @router.post("/wishes/{wish_id}/fulfill")
 def fulfill_wish(
     wish_id: int,
-    password: str = Form(...),
+    request: Request,
+    password: Optional[str] = Form(None),
     db: Session = Depends(get_db),
 ):
     wish = db.query(Wish).filter(Wish.id == wish_id, Wish.board == "tree").first()
     if not wish:
         raise HTTPException(404, "Wish not found")
-    if not wish.password_hash or not _verify_password(password, wish.password_hash):
-        raise HTTPException(403, "Wrong password")
+    _check_auth(wish, password, request)
     if wish.status == WishStatus.fulfilled:
         raise HTTPException(409, "Already fulfilled")
     wish.status = WishStatus.fulfilled
@@ -293,14 +313,14 @@ def fulfill_wish(
 @router.post("/wishes/{wish_id}/unfulfill")
 def unfulfill_wish(
     wish_id: int,
-    password: str = Form(...),
+    request: Request,
+    password: Optional[str] = Form(None),
     db: Session = Depends(get_db),
 ):
     wish = db.query(Wish).filter(Wish.id == wish_id, Wish.board == "tree").first()
     if not wish:
         raise HTTPException(404, "Wish not found")
-    if not wish.password_hash or not _verify_password(password, wish.password_hash):
-        raise HTTPException(403, "Wrong password")
+    _check_auth(wish, password, request)
     if wish.status != WishStatus.fulfilled:
         raise HTTPException(409, "Wish is not fulfilled")
     wish.status = WishStatus.active
@@ -315,14 +335,14 @@ def unfulfill_wish(
 @router.delete("/wishes/{wish_id}")
 def delete_wish(
     wish_id: int,
-    password: str = Form(...),
+    request: Request,
+    password: Optional[str] = Form(None),
     db: Session = Depends(get_db),
 ):
     wish = db.query(Wish).filter(Wish.id == wish_id, Wish.board == "tree").first()
     if not wish:
         raise HTTPException(404, "Wish not found")
-    if not wish.password_hash or not _verify_password(password, wish.password_hash):
-        raise HTTPException(403, "Wrong password")
+    _check_auth(wish, password, request)
     if wish.attachment_path:
         path = UPLOAD_DIR / wish.attachment_path
         if path.exists():
@@ -347,6 +367,48 @@ def get_attachment(wish_id: int, db: Session = Depends(get_db)):
         filename=wish.attachment_filename,
         media_type=wish.attachment_mimetype or "application/octet-stream",
     )
+
+
+# ─── Report ───────────────────────────────────────────────────────────────────
+
+@router.post("/report")
+def submit_report(
+    request: Request,
+    type: str = Form(...),
+    message: str = Form(...),
+):
+    if not REPORT_EMAIL or not SMTP_HOST:
+        raise HTTPException(503, "Reporting is not configured on this server.")
+    message = message.strip()
+    if len(message) < 5:
+        raise HTTPException(400, "Message too short.")
+    if len(message) > 2000:
+        raise HTTPException(400, "Message too long.")
+
+    subject = "[Tree of Wishes] " + ("Abuse report" if type == "abuse" else "Suggestion")
+    body = (
+        f"Type: {type}\n"
+        f"Message:\n{message}\n\n"
+        f"IP: {_client_ip(request)}\n"
+        f"Time: {datetime.utcnow().isoformat()} UTC"
+    )
+    msg = EmailMessage()
+    msg["Subject"] = subject
+    msg["From"] = SMTP_USER or REPORT_EMAIL
+    msg["To"] = REPORT_EMAIL
+    msg.set_content(body)
+
+    try:
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as smtp:
+            smtp.ehlo()
+            smtp.starttls()
+            if SMTP_USER and SMTP_PASS:
+                smtp.login(SMTP_USER, SMTP_PASS)
+            smtp.send_message(msg)
+    except Exception:
+        raise HTTPException(500, "Failed to send report.")
+
+    return {"ok": True}
 
 
 # ─── Search ───────────────────────────────────────────────────────────────────
