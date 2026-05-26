@@ -1,3 +1,5 @@
+import time
+
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -8,6 +10,7 @@ from ..services.expiry import sweep_expired_wishes
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
+templates.env.globals["sv"] = str(int(time.time()))
 
 
 @router.get("/", response_class=RedirectResponse)
