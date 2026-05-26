@@ -21,7 +21,15 @@
     <a href="/my-wishes" class="nav-link {% if active_page == 'my-wishes' %}active{% endif %}" data-i18n="nav.myWishes">My Wishes</a>
     <button id="lang-toggle">한국어</button>
   </nav>
+  <button class="nav-hamburger" id="nav-hamburger" aria-label="Menu" aria-expanded="false" aria-controls="nav-mobile-menu">☰</button>
 </header>
+
+<div id="nav-mobile-menu" class="nav-mobile-menu" aria-hidden="true">
+  <a href="/settings" class="nav-link{% if active_page == 'settings' %} active{% endif %}" data-i18n="nav.settings">Settings</a>
+  <a href="/about" class="nav-link{% if active_page == 'about' %} active{% endif %}" data-i18n="nav.about">About</a>
+  <a href="/my-wishes" class="nav-link{% if active_page == 'my-wishes' %} active{% endif %}" data-i18n="nav.myWishes">My Wishes</a>
+  <button id="lang-toggle-mobile" class="nav-link nav-lang-btn">한국어</button>
+</div>
 
 <div class="page-wrap">
   {% block content %}{% endblock %}
@@ -38,6 +46,47 @@
 </div>
 
 <script src="/static/js/i18n.js"></script>
+<script>
+(function () {
+  var menu, hamburger;
+  document.addEventListener('DOMContentLoaded', function () {
+    menu      = document.getElementById('nav-mobile-menu');
+    hamburger = document.getElementById('nav-hamburger');
+
+    hamburger && hamburger.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var open = menu.classList.toggle('open');
+      hamburger.setAttribute('aria-expanded', String(open));
+      menu.setAttribute('aria-hidden', String(!open));
+    });
+
+    document.addEventListener('click', function () {
+      if (menu && menu.classList.contains('open')) {
+        menu.classList.remove('open');
+        hamburger && hamburger.setAttribute('aria-expanded', 'false');
+        menu.setAttribute('aria-hidden', 'true');
+      }
+    });
+
+    menu && menu.addEventListener('click', function (e) { e.stopPropagation(); });
+
+    /* Mobile lang button delegates to the desktop button so all existing
+       per-page handlers (app.js, settings.js, etc.) fire exactly once. */
+    var mobileLang = document.getElementById('lang-toggle-mobile');
+    mobileLang && mobileLang.addEventListener('click', function () {
+      menu && menu.classList.remove('open');
+      var desktop = document.getElementById('lang-toggle');
+      desktop && desktop.click();
+    });
+  });
+
+  /* Keep mobile button label in sync whenever the language changes. */
+  document.addEventListener('langchange', function (e) {
+    var btn = document.getElementById('lang-toggle-mobile');
+    if (btn) btn.textContent = e.detail.lang === 'en' ? '한국어' : 'English';
+  });
+})();
+</script>
 {% block extra_scripts %}{% endblock %}
 </body>
 </html>
