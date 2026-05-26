@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import asc
 from ..models import Wish, WishStatus, effective_age_expr
@@ -6,43 +7,65 @@ from ..config import TREE_CAPACITY, COLUMBARIUM_CAPACITY, UPLOAD_DIR
 
 
 def _delete_wish_files(wish: Wish):
-    """Remove uploaded attachment from disk when a wish is permanently deleted."""
     if wish.attachment_path:
         path = UPLOAD_DIR / wish.attachment_path
         if path.exists():
             os.remove(path)
 
 
-def ensure_tree_capacity(db: Session):
-    """
-    If the tree has reached TREE_CAPACITY, permanently delete the single oldest
-    wish by effective-age (fulfilled_at if fulfilled, else created_at).
-    The evicted wish is gone forever — it does NOT go to the columbarium.
+def _wish_info(wish: Wish) -> dict:
+    return {
+        "id":         wish.id,
+        "owner_id":   wish.owner_id,
+        "text":       wish.text,
+        "name":       wish.name,
+        "status":     wish.status.value,
+        "created_at": wish.created_at.isoformat(),
+        "due_date":   wish.due_date.isoformat() if wish.due_date else None,
+        "likes":      wish.likes,
+        "views":      wish.views,
+    }
 
-    Extension point: once owner_id support is added, skip wishes where
-    owner_id IS NOT NULL to protect registered users from age-based deletion.
+
+def ensure_tree_capacity(db: Session) -> Optional[dict]:
+    """
+    If the tree is full, evict one wish and return its info if it was owned
+    by a registered user (so the caller can send a notification), else None.
+
+    Eviction order:
+      Tier 1 — oldest anonymous wish (owner_id IS NULL) by effective age.
+      Tier 2 — oldest registered user's wish, if no anonymous wish exists.
     """
     count = db.query(Wish).filter(Wish.board == "tree").count()
     if count < TREE_CAPACITY:
-        return
+        return None
 
-    oldest = (
+    base_q = (
         db.query(Wish)
         .filter(Wish.board == "tree")
-        # Extension point: .filter(Wish.owner_id.is_(None)) when protecting registered users
         .order_by(asc(effective_age_expr()))
-        .first()
     )
-    if oldest:
-        _delete_wish_files(oldest)
-        db.delete(oldest)
-        db.flush()
+
+    # Tier 1: prefer evicting an anonymous wish
+    evicted = base_q.filter(Wish.owner_id.is_(None)).first()
+    # Tier 2: fall back to the oldest registered user's wish
+    if evicted is None:
+        evicted = base_q.first()
+
+    if not evicted:
+        return None
+
+    info = _wish_info(evicted) if evicted.owner_id is not None else None
+    _delete_wish_files(evicted)
+    db.delete(evicted)
+    db.flush()
+    return info
 
 
 def ensure_columbarium_capacity(db: Session):
     """
-    If the columbarium has reached COLUMBARIUM_CAPACITY, permanently delete the
-    least popular wish (fewest likes; ties broken by oldest created_at).
+    If the columbarium is full, permanently delete the least popular wish
+    (fewest likes; ties broken by oldest created_at).
     """
     count = db.query(Wish).filter(Wish.board == "columbarium").count()
     if count < COLUMBARIUM_CAPACITY:

@@ -7,8 +7,8 @@ from pathlib import Path
 from typing import Optional
 
 from fastapi import (
-    APIRouter, Depends, HTTPException, Request, UploadFile, File, Form,
-    Query,
+    APIRouter, BackgroundTasks, Depends, HTTPException, Request,
+    UploadFile, File, Form, Query,
 )
 from fastapi.responses import FileResponse, JSONResponse
 import bcrypt
@@ -46,6 +46,43 @@ def _check_auth(wish: "Wish", password: Optional[str], request: Request) -> None
         return
     if not wish.password_hash or not _verify_password(password or "", wish.password_hash):
         raise HTTPException(403, "Wrong password")
+
+
+def _send_smtp_email(subject: str, body: str) -> None:
+    """Send an email via SMTP. Raises on failure."""
+    if not REPORT_EMAIL or not SMTP_HOST:
+        return
+    msg = EmailMessage()
+    msg["Subject"] = subject
+    msg["From"] = SMTP_USER or REPORT_EMAIL
+    msg["To"] = REPORT_EMAIL
+    msg.set_content(body)
+    with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as smtp:
+        smtp.ehlo()
+        smtp.starttls()
+        if SMTP_USER and SMTP_PASS:
+            smtp.login(SMTP_USER, SMTP_PASS)
+        smtp.send_message(msg)
+
+
+def _notify_eviction(info: dict) -> None:
+    body = (
+        "A wish owned by a registered user was evicted to make room on the tree.\n\n"
+        f"Wish ID  : {info['id']}\n"
+        f"Owner ID : {info['owner_id']}\n"
+        f"Name     : {info['name'] or '—'}\n"
+        f"Text     : {info['text']}\n"
+        f"Status   : {info['status']}\n"
+        f"Created  : {info['created_at']}\n"
+        f"Due      : {info['due_date'] or '—'}\n"
+        f"Likes    : {info['likes']}\n"
+        f"Views    : {info['views']}\n"
+        f"Evicted  : {datetime.utcnow().isoformat()} UTC"
+    )
+    try:
+        _send_smtp_email("[Tree of Wishes] Registered user's wish evicted", body)
+    except Exception:
+        pass  # don't block wish creation if email fails
 
 
 PAGE_SIZE = 50
@@ -157,6 +194,7 @@ def like_wish(wish_id: int, request: Request, db: Session = Depends(get_db)):
 @router.post("/wishes")
 async def create_wish(
     request: Request,
+    background_tasks: BackgroundTasks,
     text: str = Form(...),
     name: Optional[str] = Form(None),
     password: Optional[str] = Form(None),
@@ -190,8 +228,7 @@ async def create_wish(
 
     pw_hash = _hash_password(password) if password else None
 
-    # Enforce tree capacity (evicts oldest if full)
-    ensure_tree_capacity(db)
+    evicted = ensure_tree_capacity(db)
 
     wish = Wish(
         text=text.strip(),
@@ -210,6 +247,8 @@ async def create_wish(
     record_creation(db, ip)
     db.commit()
     db.refresh(wish)
+    if evicted:
+        background_tasks.add_task(_notify_eviction, evicted)
     return _wish_to_dict(wish)
 
 
@@ -392,19 +431,8 @@ def submit_report(
         f"IP: {_client_ip(request)}\n"
         f"Time: {datetime.utcnow().isoformat()} UTC"
     )
-    msg = EmailMessage()
-    msg["Subject"] = subject
-    msg["From"] = SMTP_USER or REPORT_EMAIL
-    msg["To"] = REPORT_EMAIL
-    msg.set_content(body)
-
     try:
-        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as smtp:
-            smtp.ehlo()
-            smtp.starttls()
-            if SMTP_USER and SMTP_PASS:
-                smtp.login(SMTP_USER, SMTP_PASS)
-            smtp.send_message(msg)
+        _send_smtp_email(subject, body)
     except Exception:
         raise HTTPException(500, "Failed to send report.")
 
