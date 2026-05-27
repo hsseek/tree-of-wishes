@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Roots -->
+  <path d="M13,27 Q9,29 7,32" stroke="#7a4820" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M19,27 Q23,29 25,32" stroke="#7a4820" stroke-width="2" fill="none" stroke-linecap="round"/>
+
+  <!-- Trunk -->
+  <path d="M14,19 Q13,24 12,32 H20 Q19,24 18,19Z" fill="#8c5522"/>
+
+  <!-- Canopy — wide overlapping masses, no triangle -->
+  <ellipse cx="16" cy="15" rx="13" ry="8" fill="#1a6a40"/>
+  <ellipse cx="16" cy="11" rx="11" ry="9" fill="#268a56"/>
+  <circle cx="8"  cy="13" r="6"   fill="#2a9060"/>
+  <circle cx="24" cy="13" r="6"   fill="#2a9060"/>
+  <ellipse cx="16" cy="8" rx="9"  ry="7" fill="#33a86a"/>
+  <circle cx="15" cy="6"  r="5"   fill="#3ec070"/>
+</svg>
