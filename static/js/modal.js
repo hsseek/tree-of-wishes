@@ -28,8 +28,12 @@ class WishModal {
     this.backdrop.classList.add('open');
 
     // Owners skip the unlock step entirely
-    if (this._isOwner && this.board === 'tree') {
-      this._renderEditPanel();
+    if (this._isOwner) {
+      if (this.board === 'tree') {
+        this._renderEditPanel();
+      } else {
+        this._renderAttachmentPanel();
+      }
     }
   }
 
@@ -154,8 +158,7 @@ class WishModal {
     const isFulfilled = wish.status === 'fulfilled';
     panel.style.display = '';
 
-    // Owners can attach files regardless of status; others only on fulfilled wishes
-    const showAttachment = isFulfilled || this._isOwner;
+    const showAttachment = this._isOwner;
     const attachmentControls = showAttachment ? `
       <div class="edit-row">
         ${wish.has_attachment
@@ -224,7 +227,11 @@ class WishModal {
       _showToast('Attachment removed', 'success');
       this._renderMain(updated);
       document.querySelector('.unlock-section')?.remove();
-      this._renderEditPanel();
+      if (this.board === 'tree') {
+        this._renderEditPanel();
+      } else {
+        this._renderAttachmentPanel();
+      }
     }
   }
 
@@ -264,6 +271,28 @@ class WishModal {
       const err = await resp.json().catch(() => ({}));
       _showToast(err.detail || i18n.t('error.generic'), 'error');
     }
+  }
+
+  _renderAttachmentPanel() {
+    const panel = document.getElementById('edit-panel');
+    const wish = this._currentWish;
+    panel.style.display = '';
+    panel.innerHTML = `
+      <div class="edit-panel">
+        <div class="edit-row">
+          ${wish.has_attachment
+            ? `<button id="btn-remove-attachment" class="btn-danger-sm">${i18n.t('wish.removeAttachment')}</button>`
+            : ''}
+          <label class="field-label">${i18n.t(wish.has_attachment ? 'wish.replaceAttachment' : 'wish.attachment')}</label>
+          <input type="file" id="edit-attachment" accept="image/*,application/pdf,text/plain" />
+          <span class="form-hint">${i18n.t('wish.attachmentHint')}</span>
+        </div>
+        <div class="edit-actions">
+          <button id="btn-save" class="btn-primary">${i18n.t('wish.save')}</button>
+        </div>
+      </div>`;
+    document.getElementById('btn-save').addEventListener('click', () => this._doSave());
+    document.getElementById('btn-remove-attachment')?.addEventListener('click', () => this._doRemoveAttachment());
   }
 }
 

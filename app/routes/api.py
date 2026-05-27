@@ -280,7 +280,7 @@ async def edit_wish(
     attachment: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
 ):
-    wish = db.query(Wish).filter(Wish.id == wish_id, Wish.board == "tree").first()
+    wish = db.query(Wish).filter(Wish.id == wish_id).first()
     if not wish:
         raise HTTPException(404, "Wish not found")
     _check_auth(wish, password, request)
@@ -299,8 +299,8 @@ async def edit_wish(
         wish.attachment_mimetype = None
 
     if attachment and attachment.filename:
-        if wish.status != WishStatus.fulfilled and not is_owner:
-            raise HTTPException(400, "Attachments can only be added to fulfilled wishes.")
+        if not is_owner:
+            raise HTTPException(403, "Only registered users can attach files.")
         content = await attachment.read()
         if len(content) > MAX_FILE_SIZE_BYTES:
             raise HTTPException(413, "File too large.")
