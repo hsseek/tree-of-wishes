@@ -136,9 +136,10 @@ class FireflyCanvas {
 
     const positions = _scatter(n, W, canvasH, 30 / density_coeff, 40);
 
+    const popularThreshold = _top10Threshold(this.wishes);
     this.wishes.forEach((wish, i) => {
       const { x, y } = positions[i];
-      this.container.appendChild(this._makeFirefly(wish, x, y));
+      this.container.appendChild(this._makeFirefly(wish, x, y, wish.likes >= popularThreshold));
     });
 
     if (this.hasMore) {
@@ -150,7 +151,7 @@ class FireflyCanvas {
     }
   }
 
-  _makeFirefly(wish, x, y) {
+  _makeFirefly(wish, x, y, isPopular = false) {
     const fulfilled = wish.status === 'fulfilled';
 
     // Random animation params — all plain numbers, no string coercion tricks
@@ -164,7 +165,7 @@ class FireflyCanvas {
     const flickerDelay = -(Math.random() * flickerDur);
 
     const wrap = document.createElement('div');
-    wrap.className = 'ff-wrap';
+    wrap.className = 'ff-wrap' + (isPopular ? ' ff-popular' : '');
     // All vars must be on the same element that .ff-x/.ff-y/.ff-glyph inherit from
     wrap.style.cssText = [
       `left:${x.toFixed(1)}px`,
@@ -181,10 +182,13 @@ class FireflyCanvas {
 
     const keyword = _keyword(wish.text);
     const firstName = wish.name ? wish.name.split(/\s+/)[0] : '';
-    const labelParts = [keyword, firstName].filter(Boolean);
-    const labelText = labelParts.join(' · ');
-    const labelHtml = labelText
-      ? `<div class="ff-label${fulfilled ? ' ff-label-fulfilled' : ''}">${_escHtml(labelText)}</div>`
+    const flower = isPopular ? ['🏵️','🌺','🌼'][Math.floor(Math.random() * 3)] : '';
+    const keywordStr  = keyword   ? _escHtml(keyword)    : '';
+    const nameStr     = firstName ? _escHtml(firstName)  : '';
+    const firstPart   = keywordStr && flower ? `${keywordStr} ${flower}` : keywordStr;
+    const labelContent = [firstPart, nameStr].filter(Boolean).join(' · ');
+    const labelHtml = labelContent
+      ? `<div class="ff-label${fulfilled ? ' ff-label-fulfilled' : ''}">${labelContent}</div>`
       : '';
 
     wrap.innerHTML = `
@@ -207,14 +211,15 @@ class FireflyCanvas {
 
 class ColumbariumWall {
   constructor({ container, onOpen, popover }) {
-    this.container = container;
-    this.onOpen    = onOpen;
-    this.popover   = popover;
-    this.wishes    = [];
-    this.page      = 0;
-    this.hasMore   = true;
-    this.loading   = false;
-    this._loaded   = 0;  // index into this.wishes of last rendered item
+    this.container          = container;
+    this.onOpen             = onOpen;
+    this.popover            = popover;
+    this.wishes             = [];
+    this.page               = 0;
+    this.hasMore            = true;
+    this.loading            = false;
+    this._loaded            = 0;
+    this._popularThreshold  = Infinity;
   }
 
   async init() {
@@ -230,7 +235,20 @@ class ColumbariumWall {
     if (!this.hasMore || this.loading) return;
     const prevLen = this.wishes.length;
     await this._loadPage();
-    // Append only the new batch
+
+    const newThreshold = _top10Threshold(this.wishes);
+    if (newThreshold !== this._popularThreshold) {
+      this._popularThreshold = newThreshold;
+      this.container.querySelectorAll('.niche').forEach((el, i) => {
+        const w = this.wishes[i];
+        if (!w) return;
+        const isPopular = w.likes >= this._popularThreshold;
+        el.classList.toggle('niche-popular', isPopular);
+        const likesEl = el.querySelector('.niche-likes');
+        if (likesEl) likesEl.textContent = (isPopular ? '💐' : '✿') + ' ' + w.likes;
+      });
+    }
+
     const lmBtn = this.container.querySelector('.load-more-niche');
     this.wishes.slice(prevLen).forEach(w => {
       this.container.insertBefore(this._makeNiche(w), lmBtn);
@@ -255,6 +273,7 @@ class ColumbariumWall {
   }
 
   _render() {
+    this._popularThreshold = _top10Threshold(this.wishes);
     this.container.innerHTML = '';
     this.container.classList.add('columbarium-wall');
     this.wishes.forEach(w => this.container.appendChild(this._makeNiche(w)));
@@ -277,25 +296,25 @@ class ColumbariumWall {
 
   _makeNiche(wish) {
     // Randomise the ember animation timing per niche so they don't all pulse together
-    const dur   = (3 + Math.random() * 4).toFixed(1);
-    const delay = -(Math.random() * parseFloat(dur)).toFixed(1);
+    const dur       = (3 + Math.random() * 4).toFixed(1);
+    const delay     = -(Math.random() * parseFloat(dur)).toFixed(1);
+    const isPopular = wish.likes >= this._popularThreshold;
 
     const el = document.createElement('div');
-    el.className = 'niche';
+    el.className = 'niche' + (isPopular ? ' niche-popular' : '');
     el.style.setProperty('--ember-dur',   dur + 's');
     el.style.setProperty('--ember-delay', delay + 's');
 
-    const nameHtml = wish.name
-      ? `<div class="niche-name">${_escHtml(wish.name)}</div>`
-      : `<div class="niche-name niche-anon">—</div>`;
-
     const keyword = _keyword(wish.text);
+    const nameHtml = wish.name
+      ? `<div class="niche-text">${_escHtml(wish.name)}</div>`
+      : '';
 
     el.innerHTML = `
       <span class="niche-ember">◈</span>
+      ${keyword ? `<div class="niche-name">${_escHtml(keyword)}</div>` : ''}
       ${nameHtml}
-      ${keyword ? `<div class="niche-text">${_escHtml(keyword)}</div>` : ''}
-      <div class="niche-likes">♡ ${wish.likes}</div>`;
+      <div class="niche-likes">${isPopular ? '💐' : '✿'} ${wish.likes}</div>`;
 
     el.addEventListener('click', () => this.onOpen(wish));
     el.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') this.popover.show(wish, el); });
@@ -356,4 +375,12 @@ function _keyword(text) {
 
 function _escHtml(str) {
   return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function _top10Threshold(wishes) {
+  if (!wishes.length) return Infinity;
+  const sorted = wishes.map(w => w.likes).sort((a, b) => b - a);
+  const cutoffIdx = Math.max(1, Math.ceil(sorted.length * 0.1)) - 1;
+  const threshold = sorted[cutoffIdx];
+  return threshold > 0 ? threshold : Infinity;
 }

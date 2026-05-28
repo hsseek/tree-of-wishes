@@ -89,10 +89,10 @@ class WishModal {
       ${attachmentHtml}
       <div class="modal-stats">
         <span id="modal-views">${wish.views} ${i18n.t('wish.views')}</span>
-        <span id="modal-likes">${wish.likes} ${i18n.t('wish.likes')}</span>
+        <span id="modal-likes">${wish.likes} ${this._likeT('likes')}</span>
       </div>
       <div class="modal-actions" id="modal-actions">
-        <button class="btn-like" id="btn-like">${i18n.t('wish.likeBtn')}</button>
+        <button class="btn-like" id="btn-like">${this._likeT('likeBtn')}</button>
         ${showUnlock ? this._unlockHtml() : ''}
       </div>
       <div id="edit-panel" style="display:none"></div>
@@ -100,6 +100,12 @@ class WishModal {
 
     document.getElementById('btn-like').addEventListener('click', () => this._doLike());
     document.getElementById('btn-unlock')?.addEventListener('click', () => this._doUnlock());
+  }
+
+  _likeT(key) {
+    const ck = 'columbarium.' + key;
+    const wk = 'wish.' + key;
+    return this.board === 'columbarium' ? i18n.t(ck) || i18n.t(wk) : i18n.t(wk);
   }
 
   _unlockHtml() {
@@ -121,11 +127,11 @@ class WishModal {
     btn.disabled = true;
     const resp = await fetch(`/api/wishes/${this._currentWish.id}/like`, { method: 'POST' });
     const data = await resp.json();
-    document.getElementById('modal-likes').textContent = `${data.likes} ${i18n.t('wish.likes')}`;
+    document.getElementById('modal-likes').textContent = `${data.likes} ${this._likeT('likes')}`;
     if (data.accepted) {
       btn.disabled = false;
     } else {
-      btn.textContent = i18n.t('wish.alreadyLiked');
+      btn.textContent = this._likeT('alreadyLiked');
       btn.classList.add('liked');
     }
   }

@@ -78,6 +78,10 @@
   "wish.likeBtn": "Like",
   "wish.alreadyLiked": "Liked",
 
+  "columbarium.likeBtn": "Leave flowers",
+  "columbarium.likes": "flowers",
+  "columbarium.alreadyLiked": "Offered",
+
   "search.title": "Search",
   "search.placeholder": "Search wishes…",
   "search.searching": "Searching…",

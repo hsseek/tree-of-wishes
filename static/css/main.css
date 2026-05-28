@@ -2,7 +2,7 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
 :root {
-  --font: 'Courier New', Courier, monospace;
+  --font: 'Courier New', Courier, 'Pretendard Variable', 'Pretendard', monospace;
   --radius: 3px;
   --t: 0.18s ease;
 
@@ -159,10 +159,10 @@ body { min-height: 100vh; font-family: var(--font); background: var(--bg); color
 }
 .search-bar-inline input:focus { outline: 2px solid var(--accent); }
 .search-bar-inline button {
-  padding: 5px 11px;
+  padding: 6px 11px;
   background: var(--accent); color: #fff; border: none;
   border-radius: var(--radius); cursor: pointer;
-  font-family: var(--font); font-size: 12px;
+  font-family: var(--font); font-size: 13px;
   transition: background var(--t);
 }
 .search-bar-inline button:hover { background: var(--accent-h); }
@@ -261,6 +261,7 @@ body { min-height: 100vh; font-family: var(--font); background: var(--bg); color
 /* The ✦ glyph */
 .ff-glyph {
   display: block;
+  text-align: center;
   font-size: 20px;
   line-height: 1;
   animation-name: ff-flicker;
@@ -331,6 +332,13 @@ body { min-height: 100vh; font-family: var(--font); background: var(--bg); color
 .ff-label.ff-label-fulfilled {
   color: var(--ff-fulfilled);
   text-shadow: 0 0 6px var(--ff-glow-f);
+}
+
+/* Popular firefly — warm amber glow layered on top of the amber flicker */
+.ff-popular .ff-glyph {
+  filter:
+    drop-shadow(0 0 6px rgba(255, 150, 20, 0.85))
+    drop-shadow(0 0 14px rgba(255, 120, 10, 0.5));
 }
 
 /* ─── Hover popover ──────────────────────────────────────────────────────────── */
@@ -444,6 +452,22 @@ body { min-height: 100vh; font-family: var(--font); background: var(--bg); color
     0 0  8px rgba(180,140,80,0.15);
 }
 
+/* Popular niche — soft white glow */
+.niche-popular {
+  box-shadow:
+    inset 3px 3px 12px rgba(0,0,0,0.95),
+    inset -1px -1px 3px rgba(80,70,120,0.08),
+    0 0 14px rgba(255, 255, 255, 0.32),
+    0 0  5px rgba(255, 255, 255, 0.18);
+}
+.niche-popular:hover {
+  box-shadow:
+    inset 3px 3px 12px rgba(0,0,0,0.95),
+    inset -1px -1px 3px rgba(80,70,120,0.08),
+    0 0 22px rgba(255, 255, 255, 0.45),
+    0 0 10px rgba(255, 255, 255, 0.28);
+}
+
 /* Ember glyph */
 .niche-ember {
   display: block; font-size: 11px; margin-bottom: 5px;
@@ -474,7 +498,7 @@ body { min-height: 100vh; font-family: var(--font); background: var(--bg); color
 
 .niche-likes {
   position: absolute; bottom: 5px; right: 7px;
-  font-size: 9px; color: #4a4088; letter-spacing: 0.3px;
+  font-size: 10px; color: #8070b8; letter-spacing: 0.3px;
 }
 
 /* Load more inside wall */
