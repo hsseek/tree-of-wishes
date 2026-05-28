@@ -162,7 +162,7 @@ def list_wishes(
         q = (
             db.query(Wish)
             .filter(Wish.board == "columbarium")
-            .order_by(asc(Wish.created_at))
+            .order_by(desc(Wish.due_date))
         )
 
     total = q.count()
