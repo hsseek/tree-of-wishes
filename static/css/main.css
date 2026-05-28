@@ -372,8 +372,13 @@ body.season-spring .ff-popular .ff-glyph {
 }
 
 body.season-autumn {
-  --ff-active:  #ffb030;
-  --ff-glow-a:  rgba(255, 160, 40, 0.75);
+  --ff-active:  #c85c10;
+  --ff-glow-a:  rgba(200, 92, 16, 0.75);
+}
+body.season-autumn .ff-popular .ff-glyph {
+  filter:
+    drop-shadow(0 0 6px rgba(200, 80, 10, 0.85))
+    drop-shadow(0 0 14px rgba(170, 55, 5, 0.5));
 }
 
 body.season-winter {
@@ -809,8 +814,7 @@ body.season-winter .ff-popular .ff-glyph {
   flex: 0 0 28px; text-align: center;
   --flicker-dur: 5s; --flicker-delay: 0s;
 }
-.legend-icon-wrap.ff-dying    { --flicker-dur: 6.5s; }
-.legend-icon-wrap.ff-critical { --flicker-dur: 4.0s; }
+.legend-icon-wrap.ff-dying    { --flicker-dur: 5.5s; }
 
 /* Four seasonal glyphs side by side with fixed colors */
 .legend-seasonal-icons {
@@ -819,7 +823,7 @@ body.season-winter .ff-popular .ff-glyph {
 }
 .legend-season-spring { color: #f090b8; text-shadow: 0 0 6px rgba(240,110,170,0.7); }
 .legend-season-summer { color: #ffa830; text-shadow: 0 0 6px rgba(255,168,48,0.72); }
-.legend-season-autumn { color: #ffb030; text-shadow: 0 0 6px rgba(255,160,40,0.75); }
+.legend-season-autumn { color: #c85c10; text-shadow: 0 0 6px rgba(200,92,16,0.75); }
 .legend-season-winter { color: #88c8f0; text-shadow: 0 0 6px rgba(110,180,240,0.7); }
 
 /* Mini niche box for columbarium legend */

@@ -168,9 +168,9 @@ class FireflyCanvas {
     const durY        = 20 + Math.random() * 36;   // seconds (4× slower: was 5–14)
     const delayX      = -(Math.random() * durX);    // negative → start at random phase
     const delayY      = -(Math.random() * durY);
-    // Dying wishes flicker faster — critical 3-5s, dying 5-8s, normal 6-16s
-    const flickerDur  = isCritical ? (3.0 + Math.random() * 2.0)
-                      : isDying    ? (5.0 + Math.random() * 3.0)
+    // Dying wishes flicker faster — critical 2-4s, dying 4-7s, normal 6-16s
+    const flickerDur  = isCritical ? (2.0 + Math.random() * 2.0)
+                      : isDying    ? (4.0 + Math.random() * 3.0)
                       :               6   + Math.random() * 10;
     const flickerDelay = -(Math.random() * flickerDur);
 
