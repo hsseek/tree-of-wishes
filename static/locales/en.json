@@ -33,6 +33,18 @@
   "about.title": "About Tree of Wishes",
   "about.body": "Tree of Wishes is an anonymous, public wish board. Leave a wish on the tree and let it grow. When a wish's time passes without being fulfilled, it moves to the Columbarium — a quiet memorial where it may still be liked and remembered.\n\nIf you sign in, your wishes are linked to your account and you can edit them at any time — no password needed. Signed-in users can also attach images, documents, or text files to any of their wishes. Without an account, a password is required when making a wish; it cannot be recovered, so keep it safe.\n\nEnjoy the tree.",
 
+  "about.legend.title": "Visual Guide",
+  "about.legend.treeTitle": "Tree of Wishes",
+  "about.legend.active": "Active wish",
+  "about.legend.dying": "Expiring soon — 7 days or fewer",
+  "about.legend.critical": "Last day",
+  "about.legend.fulfilled": "Wish came true",
+  "about.legend.popular": "Many likes",
+  "about.legend.seasonal": "Color shifts with the season: spring · summer · autumn · winter",
+  "about.legend.columbariumTitle": "Columbarium",
+  "about.legend.niche": "Unfulfilled wish — ✿ shows flower offerings",
+  "about.legend.nichePopular": "Many flowers offered",
+
   "myWishes.title": "My Wishes",
   "myWishes.loginNotice": "Sign in with Google to view and manage your wishes. Signed-in users can edit, fulfill, or delete their wishes without a password.",
   "myWishes.loginPrompt": "Sign in to view and manage your wishes.",
@@ -77,6 +89,8 @@
   "wish.confirmDelete": "Delete this wish permanently?",
   "wish.likeBtn": "Like",
   "wish.alreadyLiked": "Liked",
+  "wish.share": "Copy Link",
+  "wish.linkCopied": "Link copied!",
 
   "columbarium.likeBtn": "Leave flowers",
   "columbarium.likes": "flowers",

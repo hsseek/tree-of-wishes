@@ -33,6 +33,18 @@
   "about.title": "소원의 나무 소개",
   "about.body": "소원의 나무는 익명으로 소원을 적을 수 있는 공간입니다. 나무에 소원을 달고 이루어지길 기다려보세요. 기한이 지나도록 이루어지지 않은 소원은 납골당으로 옮겨져 조용히 추모됩니다.\n\n로그인하면 비밀번호 없이 소원을 수정할 수 있고, 소원에 이미지, 문서, 텍스트 파일을 첨부할 수 있습니다. 로그인하지 않은 경우, 소원을 적을 때 비밀번호를 설정해야 하며 분실 시 복구가 불가능하니 잘 기억해 두세요.",
 
+  "about.legend.title": "아이콘 설명",
+  "about.legend.treeTitle": "소원의 나무",
+  "about.legend.active": "진행 중인 소원",
+  "about.legend.dying": "곧 만료 — 7일 이내",
+  "about.legend.critical": "마지막 날",
+  "about.legend.fulfilled": "이루어진 소원",
+  "about.legend.popular": "많은 '좋아요'를 받은 소원",
+  "about.legend.seasonal": "계절별 색상: 봄, 여름, 가을, 겨울",
+  "about.legend.columbariumTitle": "납골당",
+  "about.legend.niche": "이루어지지 않은 소원 — ✿ 는 헌화 수",
+  "about.legend.nichePopular": "많은 헌화를 받은 소원",
+
   "myWishes.title": "내 소원",
   "myWishes.loginNotice": "로그인하면 내 소원을 확인하고 관리할 수 있습니다. 로그인한 사용자는 비밀번호 없이 소원을 수정, 이루었음 표시, 삭제할 수 있습니다.",
   "myWishes.loginPrompt": "로그인하여 내 소원을 확인하고 관리하세요.",
@@ -77,6 +89,8 @@
   "wish.confirmDelete": "이 소원을 영구적으로 삭제할까요?",
   "wish.likeBtn": "좋아요",
   "wish.alreadyLiked": "좋아요 완료",
+  "wish.share": "링크 복사하기",
+  "wish.linkCopied": "링크가 복사되었습니다!",
 
   "columbarium.likeBtn": "헌화하기",
   "columbarium.likes": "헌화",

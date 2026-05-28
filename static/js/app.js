@@ -42,6 +42,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     const next = i18n.getLang() === 'en' ? 'ko' : 'en';
     await i18n.setLang(next);
     _updateLangToggle();
+    if (typeof CURRENT_USER_ID !== 'undefined' && CURRENT_USER_ID !== null) {
+      const fd = new FormData();
+      fd.append('language', next);
+      fetch('/api/me/language', { method: 'PATCH', body: fd }).catch(() => {});
+    }
   });
 });
 

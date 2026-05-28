@@ -93,12 +93,14 @@ class WishModal {
       </div>
       <div class="modal-actions" id="modal-actions">
         <button class="btn-like" id="btn-like">${this._likeT('likeBtn')}</button>
+        <button class="btn-share" id="btn-share">${i18n.t('wish.share')}</button>
         ${showUnlock ? this._unlockHtml() : ''}
       </div>
       <div id="edit-panel" style="display:none"></div>
     `;
 
     document.getElementById('btn-like').addEventListener('click', () => this._doLike());
+    document.getElementById('btn-share').addEventListener('click', () => this._doShare());
     document.getElementById('btn-unlock')?.addEventListener('click', () => this._doUnlock());
   }
 
@@ -120,6 +122,16 @@ class WishModal {
   // Append password to FormData only when a password was entered (non-owners have null)
   _appendPassword(fd) {
     if (this._storedPassword !== null) fd.append('password', this._storedPassword);
+  }
+
+  async _doShare() {
+    const url = `${window.location.origin}/wish/${this._currentWish.id}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      _showToast(i18n.t('wish.linkCopied'), 'success');
+    } catch (_) {
+      _showToast(url, 'info');
+    }
   }
 
   async _doLike() {

@@ -341,6 +341,51 @@ body { min-height: 100vh; font-family: var(--font); background: var(--bg); color
     drop-shadow(0 0 14px rgba(255, 120, 10, 0.5));
 }
 
+/* Near-expiry dying visualization */
+.ff-dying .ff-glyph.ff-active {
+  color: #c07018;
+  text-shadow:
+    0 0 5px rgba(190, 100, 20, 0.55),
+    0 0 12px rgba(170, 75, 10, 0.35),
+    0 0 24px rgba(140, 55, 5, 0.18);
+}
+.ff-dying .ff-label { color: #c07018; opacity: 0.5; }
+
+.ff-critical .ff-glyph.ff-active {
+  color: #904010;
+  opacity: 0.6;
+  text-shadow:
+    0 0 5px rgba(140, 55, 10, 0.45),
+    0 0 12px rgba(120, 35, 5, 0.25);
+}
+.ff-critical .ff-label { color: #904010; opacity: 0.35; }
+
+/* ─── Seasonal firefly color overrides ───────────────────────────────────────── */
+body.season-spring {
+  --ff-active:  #f090b8;
+  --ff-glow-a:  rgba(240, 110, 170, 0.7);
+}
+body.season-spring .ff-popular .ff-glyph {
+  filter:
+    drop-shadow(0 0 6px rgba(240, 90, 160, 0.85))
+    drop-shadow(0 0 14px rgba(210, 60, 130, 0.5));
+}
+
+body.season-autumn {
+  --ff-active:  #ffb030;
+  --ff-glow-a:  rgba(255, 160, 40, 0.75);
+}
+
+body.season-winter {
+  --ff-active:  #88c8f0;
+  --ff-glow-a:  rgba(110, 180, 240, 0.7);
+}
+body.season-winter .ff-popular .ff-glyph {
+  filter:
+    drop-shadow(0 0 6px rgba(90, 170, 240, 0.85))
+    drop-shadow(0 0 14px rgba(70, 150, 220, 0.5));
+}
+
 /* ─── Hover popover ──────────────────────────────────────────────────────────── */
 .wish-popover {
   position: fixed;
@@ -579,6 +624,13 @@ body { min-height: 100vh; font-family: var(--font); background: var(--bg); color
 .btn-like:hover:not(:disabled) { background: var(--accent); color: #fff; border-color: var(--accent); }
 .btn-like.liked { opacity: 0.5; cursor: default; }
 
+.btn-share {
+  background: var(--bg-panel); border: 1px solid var(--border); color: var(--text-muted);
+  padding: 5px 12px; border-radius: var(--radius); cursor: pointer;
+  font-family: var(--font); font-size: 13px; transition: background var(--t), color var(--t);
+}
+.btn-share:hover { background: rgba(255,255,255,0.07); color: var(--text); }
+
 .unlock-section { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 .unlock-input {
   padding: 5px 10px; background: var(--bg-panel); border: 1px solid var(--border);
@@ -744,6 +796,51 @@ body { min-height: 100vh; font-family: var(--font); background: var(--bg); color
 #save-status { display: none; color: var(--accent); font-size: 13px; margin-top: 10px; }
 
 .about-body { font-size: 14px; line-height: 1.8; white-space: pre-wrap; }
+
+/* ─── About page legend ──────────────────────────────────────────────────────── */
+.legend-divider { border: none; border-top: 1px solid var(--border); margin: 22px 0 18px; }
+.legend-title { font-size: 11px; font-weight: bold; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 14px; }
+.legend-section-title { font-size: 10px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; color: var(--text-muted); opacity: 0.65; margin: 14px 0 8px; }
+.legend-items { display: flex; flex-direction: column; gap: 9px; }
+.legend-item { display: flex; align-items: center; gap: 12px; font-size: 13px; line-height: 1.4; color: var(--text-muted); }
+
+/* Icon column — sets flicker vars so ff-glyph animates correctly */
+.legend-icon-wrap {
+  flex: 0 0 28px; text-align: center;
+  --flicker-dur: 5s; --flicker-delay: 0s;
+}
+.legend-icon-wrap.ff-dying    { --flicker-dur: 6.5s; }
+.legend-icon-wrap.ff-critical { --flicker-dur: 4.0s; }
+
+/* Four seasonal glyphs side by side with fixed colors */
+.legend-seasonal-icons {
+  flex: 0 0 auto; display: flex; gap: 5px; align-items: center;
+  --flicker-dur: 5s; --flicker-delay: 0s;
+}
+.legend-season-spring { color: #f090b8; text-shadow: 0 0 6px rgba(240,110,170,0.7); }
+.legend-season-summer { color: #ffa830; text-shadow: 0 0 6px rgba(255,168,48,0.72); }
+.legend-season-autumn { color: #ffb030; text-shadow: 0 0 6px rgba(255,160,40,0.75); }
+.legend-season-winter { color: #88c8f0; text-shadow: 0 0 6px rgba(110,180,240,0.7); }
+
+/* Mini niche box for columbarium legend */
+.legend-niche {
+  flex: 0 0 40px; height: 38px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  background: linear-gradient(140deg, #16132e 0%, #1c1938 100%);
+  border-top: 1px solid #0e0c24; border-left: 1px solid #0e0c24;
+  border-bottom: 1px solid #30285e; border-right: 1px solid #30285e;
+  box-shadow: inset 2px 2px 8px rgba(0,0,0,0.9);
+  --ember-dur: 4s; --ember-delay: 0s;
+}
+.legend-niche.niche-popular {
+  box-shadow:
+    inset 2px 2px 8px rgba(0,0,0,0.9),
+    0 0 10px rgba(255,255,255,0.28),
+    0 0  4px rgba(255,255,255,0.15);
+}
+.legend-niche .niche-ember { font-size: 9px; margin: 0; }
+.legend-niche-likes { font-size: 9px; color: #8070b8; letter-spacing: 0.2px; }
+
 .my-wishes-notice { text-align: center; padding: 32px 0; color: var(--text-muted); font-size: 14px; line-height: 2.2; }
 
 /* ─── Toast ──────────────────────────────────────────────────────────────────── */

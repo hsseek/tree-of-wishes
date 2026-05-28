@@ -15,6 +15,7 @@ import bcrypt
 from sqlalchemy.orm import Session
 from sqlalchemy import or_, asc, desc
 
+from sqlalchemy import text as sa_text
 from ..database import get_db
 from ..models import Wish, WishStatus, effective_age_expr
 from ..services.capacity import ensure_tree_capacity
@@ -22,11 +23,14 @@ from ..services.rate_limit import (
     check_creation_rate, record_creation,
     can_like, record_like,
     can_record_view, record_view,
+    check_like_rate, check_view_rate,
 )
 from ..config import (
     MAX_FILE_SIZE_BYTES, ALLOWED_MIME_TYPES, UPLOAD_DIR,
     REPORT_EMAIL, SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS,
+    BASE_URL,
 )
+from ..models import User
 
 router = APIRouter(prefix="/api")
 
@@ -63,6 +67,29 @@ def _send_smtp_email(subject: str, body: str) -> None:
         if SMTP_USER and SMTP_PASS:
             smtp.login(SMTP_USER, SMTP_PASS)
         smtp.send_message(msg)
+
+
+def _notify_first_like(to_email: str, wish_text: str, wish_id: int, language: str = 'en') -> None:
+    snippet = wish_text[:80] + ('…' if len(wish_text) > 80 else '')
+    link = f"{BASE_URL}/wish/{wish_id}"
+    if language == 'ko':
+        subject = "[소원의 나무] 소원에 첫 번째 좋아요가 달렸습니다"
+        body = (
+            "누군가 회원님의 소원에 좋아요를 눌렀습니다!\n\n"
+            f"소원   : {snippet}\n"
+            f"링크   : {link}"
+        )
+    else:
+        subject = "[Tree of Wishes] Your wish received its first like"
+        body = (
+            "Someone liked your wish on Tree of Wishes!\n\n"
+            f"Wish   : {snippet}\n"
+            f"Link   : {link}"
+        )
+    try:
+        _send_smtp_email(subject, body)
+    except Exception:
+        pass
 
 
 def _notify_eviction(info: dict) -> None:
@@ -167,6 +194,8 @@ def record_wish_view(wish_id: int, request: Request, db: Session = Depends(get_d
     if not wish:
         raise HTTPException(404, "Wish not found")
     ip = _client_ip(request)
+    if not check_view_rate(db, ip):
+        raise HTTPException(429, "Too many view requests — please wait.")
     if can_record_view(db, ip, wish_id):
         record_view(db, ip, wish_id)
         wish.views += 1
@@ -177,15 +206,28 @@ def record_wish_view(wish_id: int, request: Request, db: Session = Depends(get_d
 # ─── Like ─────────────────────────────────────────────────────────────────────
 
 @router.post("/wishes/{wish_id}/like")
-def like_wish(wish_id: int, request: Request, db: Session = Depends(get_db)):
+def like_wish(
+    wish_id: int,
+    request: Request,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+):
     wish = db.query(Wish).filter(Wish.id == wish_id).first()
     if not wish:
         raise HTTPException(404, "Wish not found")
     ip = _client_ip(request)
+    if not check_like_rate(db, ip):
+        raise HTTPException(429, "Too many likes — please wait.")
     accepted = record_like(db, ip, wish_id)
     if accepted:
         wish.likes += 1
         db.commit()
+        if wish.likes == 1 and wish.owner_id is not None:
+            owner = db.query(User).filter(User.id == wish.owner_id).first()
+            if owner and owner.email:
+                background_tasks.add_task(
+                    _notify_first_like, owner.email, wish.text, wish.id, owner.language or 'en'
+                )
     return {"likes": wish.likes, "accepted": accepted}
 
 
@@ -460,3 +502,37 @@ def search_wishes(
         .all()
     )
     return {"query": q, "results": [_wish_to_dict(w) for w in results]}
+
+
+# ─── User language preference ─────────────────────────────────────────────────
+
+_SUPPORTED_LANGUAGES = {"en", "ko"}
+
+@router.patch("/me/language")
+def set_language(
+    request: Request,
+    language: str = Form(...),
+    db: Session = Depends(get_db),
+):
+    user_id = request.session.get("user_id")
+    if not user_id:
+        raise HTTPException(401, "Not signed in")
+    if language not in _SUPPORTED_LANGUAGES:
+        raise HTTPException(400, f"Unsupported language: {language}")
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(404, "User not found")
+    user.language = language
+    db.commit()
+    return {"language": language}
+
+
+# ─── Health ───────────────────────────────────────────────────────────────────
+
+@router.get("/health")
+def health_check(db: Session = Depends(get_db)):
+    try:
+        db.execute(sa_text("SELECT 1"))
+        return {"status": "ok"}
+    except Exception as e:
+        raise HTTPException(503, f"Database unavailable: {e}")

@@ -55,6 +55,7 @@ class User(Base):
     google_id    = Column(String, nullable=True)
     display_name = Column(String, nullable=True)
     avatar_url   = Column(String, nullable=True)
+    language     = Column(String, nullable=False, default='en')
     created_at   = Column(DateTime, nullable=False, default=datetime.utcnow)
 
     wishes = relationship("Wish", back_populates="owner")

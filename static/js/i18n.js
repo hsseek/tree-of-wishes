@@ -7,6 +7,8 @@ const i18n = (() => {
   let _translations = {};
 
   function detectLang() {
+    // Logged-in users: prefer server-side preference so it follows them across devices
+    if (typeof TOW_USER_LANG !== 'undefined' && TOW_USER_LANG) return TOW_USER_LANG;
     const stored = localStorage.getItem('tow_lang');
     if (stored === 'en' || stored === 'ko') return stored;
     const browser = (navigator.language || '').toLowerCase();

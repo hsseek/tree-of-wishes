@@ -154,6 +154,13 @@ class FireflyCanvas {
   _makeFirefly(wish, x, y, isPopular = false) {
     const fulfilled = wish.status === 'fulfilled';
 
+    // Compute days until expiry for dying visualization (active wishes only)
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const dueDate = wish.due_date ? new Date(wish.due_date + 'T00:00:00') : null;
+    const daysLeft = dueDate ? Math.round((dueDate - today) / 86400000) : null;
+    const isDying    = wish.status === 'active' && daysLeft !== null && daysLeft <= 7 && daysLeft > 1;
+    const isCritical = wish.status === 'active' && daysLeft !== null && daysLeft <= 1;
+
     // Random animation params — all plain numbers, no string coercion tricks
     const rx          = 15 + Math.random() * 32;   // px
     const ry          = 8  + Math.random() * 22;    // px
@@ -161,11 +168,18 @@ class FireflyCanvas {
     const durY        = 20 + Math.random() * 36;   // seconds (4× slower: was 5–14)
     const delayX      = -(Math.random() * durX);    // negative → start at random phase
     const delayY      = -(Math.random() * durY);
-    const flickerDur  = 6  + Math.random() * 10;   // slower flicker too
+    // Dying wishes flicker faster — critical 3-5s, dying 5-8s, normal 6-16s
+    const flickerDur  = isCritical ? (3.0 + Math.random() * 2.0)
+                      : isDying    ? (5.0 + Math.random() * 3.0)
+                      :               6   + Math.random() * 10;
     const flickerDelay = -(Math.random() * flickerDur);
 
     const wrap = document.createElement('div');
-    wrap.className = 'ff-wrap' + (isPopular ? ' ff-popular' : '');
+    let wrapClass = 'ff-wrap';
+    if (isPopular)  wrapClass += ' ff-popular';
+    if (isCritical) wrapClass += ' ff-critical';
+    else if (isDying) wrapClass += ' ff-dying';
+    wrap.className = wrapClass;
     // All vars must be on the same element that .ff-x/.ff-y/.ff-glyph inherit from
     wrap.style.cssText = [
       `left:${x.toFixed(1)}px`,

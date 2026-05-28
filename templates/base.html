@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="/static/css/main.css?v={{ sv }}" />
   {% block extra_head %}{% endblock %}
 </head>
-<body class="{% block body_class %}{% endblock %}">
+<body class="season-{{ season | default('summer') }} {% block body_class %}{% endblock %}">
 
 <header class="site-header">
   <nav class="nav-left">
@@ -79,7 +79,7 @@
   </div>
 </div>
 
-<script>const CURRENT_USER_ID = {{ current_user.id if current_user else 'null' }}; const TOW_SV = '{{ sv }}';</script>
+<script>const CURRENT_USER_ID = {{ current_user.id if current_user else 'null' }}; const TOW_USER_LANG = {{ ('"' + current_user.language + '"') if current_user and current_user.language else 'null' }}; const TOW_SV = '{{ sv }}';</script>
 <script src="/static/js/i18n.js?v={{ sv }}"></script>
 <script>
 (function () {
