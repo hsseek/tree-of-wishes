@@ -352,25 +352,70 @@ function _scatter(n, W, H, minDist, pad) {
 
 function _keyword(text) {
   const stop = new Set([
-    'a','an','the','and','or','but','in','on','at','to','for','of','with','by','from',
-    'is','was','are','were','be','been','i','you','he','she','it','we','they',
-    'my','your','his','her','its','our','their','that','this','these','those',
-    'what','how','why','when','where','who','which','do','does','did',
-    'have','has','had','will','would','could','should','may','might','shall','can',
-    'not','no','if','so','as','up','out','any','all','just','also','very','more',
-    'than','then','there','here','some','about','want','wish','hope','like','get',
-    'please','really','much','one','two','three','make','need','go','come','see',
-    'know','think','feel','too','now','still','even','only','its','am','im',
+    'a','an','the','and','or','but','in','on','at','to','for','of','with','by',
+    'from','into','onto','about','before','after','since','until','while','again',
+    'i','you','he','she','it','we','they','me','him','her','us','them',
+    'my','your','his','its','our','their','this','that','these','those',
+    'what','how','why','when','where','who','which',
+    'is','was','are','were','be','been','being',
+    'do','does','did','have','has','had',
+    'get','go','come','make','let','find','fall','give','take','keep',
+    'feel','help','want','need','wish','hope','like','see','know','think',
+    'say','try','look','stay','live','move','start','call','ask','seem',
+    'finish','become','bring','show','leave','turn','mean','means',
+    'will','would','could','should','may','might','shall','can','must',
+    'not','no','if','so','as','up','out','just','also','very','more',
+    'than','then','there','here','some','any','all','even','only','too',
+    'please','really','much','still','back','am','im',
+    'one','two','three','once','ever','never','always','every','each',
+    'actually','something','anything','nothing','everything','already','maybe',
+    'right','good','bad','big','little','long','own','new','old',
   ]);
-  const words = (text || '').replace(/[^\w가-힣ㄱ-ㆎ\s]/g, ' ').split(/\s+/);
-  for (const w of words) {
-    if (!w) continue;
-    const isAscii = /^[a-zA-Z]+$/.test(w);
-    if (isAscii && (w.length < 3 || stop.has(w.toLowerCase()))) continue;
-    if (!isAscii && w.length < 2) continue;
-    return w.length > 12 ? w.slice(0, 12) + '…' : w;
+
+  // Korean postpositions/suffixes — longest first to avoid partial match
+  const koSfx = [
+    '이에요','예요','들이랑','한테서','으로부터','로부터',
+    '이랑','에서','에게','으로','까지','부터','하고',
+    '이야','이다','이고','이며','들과','들을','들은','들이',
+    '이라','라고','이서','라서','이는','이면','이나','한테',
+    '어요','아요','여요','이요','네요','지요','고요',
+    '랑','와','과','을','를','이','가','은','는',
+    '로','의','도','만','야','아','에','들',
+  ];
+
+  function stripKo(w) {
+    for (const s of koSfx) {
+      if (w.endsWith(s) && w.length - s.length >= 2) return w.slice(0, w.length - s.length);
+    }
+    return w;
   }
-  return '';
+
+  const words = (text || '').replace(/[^\w가-힣ㄱ-ㆎ\s]/g, ' ').split(/\s+/).filter(Boolean);
+  let best = '', bestScore = -1;
+
+  for (const raw of words) {
+    const isEn = /^[a-zA-Z]+$/.test(raw);
+    const isKo = /[가-힣]/.test(raw);
+    let candidate = '', score = 0;
+
+    if (isEn) {
+      if (raw.length < 3 || stop.has(raw.toLowerCase())) continue;
+      candidate = raw;
+      score = raw.length >= 5 ? 2 : 1;
+    } else if (isKo) {
+      const root = stripKo(raw);
+      if (root.length < 2) continue;
+      candidate = root;
+      // Prefer unstripped (bare nouns) and longer roots
+      score = (root === raw ? 2 : 0) + (root.length >= 3 ? 1 : 0);
+    } else {
+      continue;
+    }
+
+    if (score > bestScore) { bestScore = score; best = candidate; }
+  }
+
+  return best.length > 12 ? best.slice(0, 12) + '…' : best;
 }
 
 function _escHtml(str) {
