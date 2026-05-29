@@ -200,9 +200,9 @@ class FireflyCanvas {
     const keywordStr  = keyword   ? _escHtml(keyword)    : '';
     const nameStr     = firstName ? _escHtml(firstName)  : '';
     const firstPart   = keywordStr && flower ? `${keywordStr} ${flower}` : keywordStr;
-    const labelContent = [firstPart, nameStr].filter(Boolean).join(' · ');
-    const labelHtml = labelContent
-      ? `<div class="ff-label${fulfilled ? ' ff-label-fulfilled' : ''}">${labelContent}</div>`
+    const nameLineHtml = nameStr ? `<div class="ff-label-name">${nameStr}</div>` : '';
+    const labelHtml = firstPart || nameStr
+      ? `<div class="ff-label${fulfilled ? ' ff-label-fulfilled' : ''}">${firstPart}${nameLineHtml}</div>`
       : '';
 
     wrap.innerHTML = `

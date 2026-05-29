@@ -329,6 +329,13 @@ body { min-height: 100vh; font-family: var(--font); background: var(--bg); color
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.ff-label-name {
+  font-size: 8px;
+  opacity: 0.75;
+  margin-top: 1px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .ff-label.ff-label-fulfilled {
   color: var(--ff-fulfilled);
   text-shadow: 0 0 6px var(--ff-glow-f);
