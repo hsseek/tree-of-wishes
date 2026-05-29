@@ -89,12 +89,14 @@
   "wish.confirmDelete": "Delete this wish permanently?",
   "wish.likeBtn": "Like",
   "wish.alreadyLiked": "Liked",
+  "wish.unlikeBtn": "Unlike",
   "wish.share": "Copy Link",
   "wish.linkCopied": "Link copied!",
 
   "columbarium.likeBtn": "Leave flowers",
   "columbarium.likes": "flowers",
   "columbarium.alreadyLiked": "Offered",
+  "columbarium.unlikeBtn": "Take back flowers",
 
   "search.title": "Search",
   "search.placeholder": "Search wishes…",

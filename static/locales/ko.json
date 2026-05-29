@@ -89,12 +89,14 @@
   "wish.confirmDelete": "이 소원을 영구적으로 삭제할까요?",
   "wish.likeBtn": "좋아요",
   "wish.alreadyLiked": "좋아요 완료",
+  "wish.unlikeBtn": "좋아요 취소",
   "wish.share": "링크 복사하기",
   "wish.linkCopied": "링크가 복사되었습니다!",
 
   "columbarium.likeBtn": "헌화하기",
   "columbarium.likes": "헌화",
   "columbarium.alreadyLiked": "헌화 완료",
+  "columbarium.unlikeBtn": "헌화 취소",
 
   "search.title": "검색",
   "search.placeholder": "소원 검색…",

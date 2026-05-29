@@ -21,7 +21,7 @@ from ..models import Wish, WishStatus, effective_age_expr
 from ..services.capacity import ensure_tree_capacity
 from ..services.rate_limit import (
     check_creation_rate, record_creation,
-    can_like, record_like,
+    can_like, record_like, revoke_like,
     can_record_view, record_view,
     check_like_rate, check_view_rate,
 )
@@ -209,6 +209,13 @@ def record_wish_view(wish_id: int, request: Request, db: Session = Depends(get_d
 
 # ─── Like ─────────────────────────────────────────────────────────────────────
 
+@router.get("/wishes/{wish_id}/liked")
+def get_liked_status(wish_id: int, request: Request, db: Session = Depends(get_db)):
+    ip = _client_ip(request)
+    liked = not can_like(db, ip, wish_id)
+    return {"liked": liked}
+
+
 @router.post("/wishes/{wish_id}/like")
 def like_wish(
     wish_id: int,
@@ -220,19 +227,24 @@ def like_wish(
     if not wish:
         raise HTTPException(404, "Wish not found")
     ip = _client_ip(request)
+    already_liked = not can_like(db, ip, wish_id)
+    if already_liked:
+        revoke_like(db, ip, wish_id)
+        wish.likes = max(0, wish.likes - 1)
+        db.commit()
+        return {"likes": wish.likes, "liked": False}
     if not check_like_rate(db, ip):
         raise HTTPException(429, "Too many likes — please wait.")
-    accepted = record_like(db, ip, wish_id)
-    if accepted:
-        wish.likes += 1
-        db.commit()
-        if wish.likes == 1 and wish.owner_id is not None:
-            owner = db.query(User).filter(User.id == wish.owner_id).first()
-            if owner and owner.email:
-                background_tasks.add_task(
-                    _notify_first_like, owner.email, wish.text, wish.id, owner.language or 'en'
-                )
-    return {"likes": wish.likes, "accepted": accepted}
+    record_like(db, ip, wish_id)
+    wish.likes += 1
+    db.commit()
+    if wish.likes == 1 and wish.owner_id is not None:
+        owner = db.query(User).filter(User.id == wish.owner_id).first()
+        if owner and owner.email:
+            background_tasks.add_task(
+                _notify_first_like, owner.email, wish.text, wish.id, owner.language or 'en'
+            )
+    return {"likes": wish.likes, "liked": True}
 
 
 # ─── Create wish ──────────────────────────────────────────────────────────────

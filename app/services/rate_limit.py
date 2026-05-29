@@ -37,6 +37,20 @@ def can_like(db: Session, ip: str, wish_id: int) -> bool:
     return exists is None
 
 
+def revoke_like(db: Session, ip: str, wish_id: int) -> bool:
+    """Delete a like record. Returns True if found and deleted, False if not found."""
+    record = (
+        db.query(LikeRecord)
+        .filter(LikeRecord.ip == ip, LikeRecord.wish_id == wish_id)
+        .first()
+    )
+    if record:
+        db.delete(record)
+        db.flush()
+        return True
+    return False
+
+
 def record_like(db: Session, ip: str, wish_id: int) -> bool:
     """
     Attempt to record a like. Returns True if the like was accepted,

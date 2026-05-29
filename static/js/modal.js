@@ -1,5 +1,5 @@
 /**
- * WishModal — wish detail, like, edit (tree only), image thumbnail.
+ * WishModal — wish detail, like, edit, image thumbnail.
  */
 class WishModal {
   constructor({ board }) {
@@ -30,11 +30,7 @@ class WishModal {
 
     // Owners and admins skip the unlock step entirely
     if (this._isOwner || this._isAdmin) {
-      if (this.board === 'tree' || this._isAdmin) {
-        this._renderEditPanel();
-      } else {
-        this._renderAttachmentPanel();
-      }
+      this._renderEditPanel();
     }
   }
 
@@ -103,6 +99,22 @@ class WishModal {
     document.getElementById('btn-like').addEventListener('click', () => this._doLike());
     document.getElementById('btn-share').addEventListener('click', () => this._doShare());
     document.getElementById('btn-unlock')?.addEventListener('click', () => this._doUnlock());
+
+    fetch(`/api/wishes/${wish.id}/liked`)
+      .then(r => r.json())
+      .then(data => { if (data.liked) this._setLiked(true); });
+  }
+
+  _setLiked(liked) {
+    const btn = document.getElementById('btn-like');
+    if (!btn) return;
+    if (liked) {
+      btn.textContent = this._likeT('unlikeBtn');
+      btn.classList.add('liked');
+    } else {
+      btn.textContent = this._likeT('likeBtn');
+      btn.classList.remove('liked');
+    }
   }
 
   _likeT(key) {
@@ -141,12 +153,8 @@ class WishModal {
     const resp = await fetch(`/api/wishes/${this._currentWish.id}/like`, { method: 'POST' });
     const data = await resp.json();
     document.getElementById('modal-likes').textContent = `${data.likes} ${this._likeT('likes')}`;
-    if (data.accepted) {
-      btn.disabled = false;
-    } else {
-      btn.textContent = this._likeT('alreadyLiked');
-      btn.classList.add('liked');
-    }
+    btn.disabled = false;
+    this._setLiked(data.liked);
   }
 
   async _doUnlock() {
