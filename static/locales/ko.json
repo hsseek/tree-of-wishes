@@ -1,6 +1,6 @@
 {
   "nav.tree": "소원의 나무",
-  "nav.columbarium": "납골당",
+  "nav.columbarium": "봉안당",
   "nav.about": "소개",
   "nav.report": "제안하기",
   "nav.myWishes": "내 소원",
@@ -22,7 +22,7 @@
   "tree.subtitle": "나무에 소원을 달아보세요",
   "tree.makeWish": "소원 적기",
 
-  "columbarium.title": "납골당",
+  "columbarium.title": "봉안당",
   "columbarium.subtitle": "이루어지지 못한 소원들의 안식처",
 
   "settings.title": "설정",
@@ -31,7 +31,7 @@
   "settings.saved": "저장되었습니다",
 
   "about.title": "소원의 나무 소개",
-  "about.body": "소원의 나무는 익명으로 소원을 적을 수 있는 공간입니다. 나무에 소원을 달고 이루어지길 기다려보세요. 기한이 지나도록 이루어지지 않은 소원은 납골당으로 옮겨져 조용히 추모됩니다.\n\n로그인하면 비밀번호 없이 소원을 수정할 수 있고, 소원에 이미지, 문서, 텍스트 파일을 첨부할 수 있습니다. 로그인하지 않은 경우, 소원을 적을 때 비밀번호를 설정해야 하며 분실 시 복구가 불가능하니 잘 기억해 두세요.",
+  "about.body": "소원의 나무는 익명으로 소원을 적을 수 있는 공간입니다. 나무에 소원을 달고 이루어지길 기다려보세요. 기한이 지나도록 이루어지지 않은 소원은 봉안당으로 옮겨져 조용히 추모됩니다.\n\n로그인하면 비밀번호 없이 소원을 수정할 수 있고, 소원에 이미지, 문서, 텍스트 파일을 첨부할 수 있습니다. 로그인하지 않은 경우, 소원을 적을 때 비밀번호를 설정해야 하며 분실 시 복구가 불가능하니 잘 기억해 두세요.",
 
   "about.legend.title": "아이콘 설명",
   "about.legend.treeTitle": "소원의 나무",
@@ -41,7 +41,7 @@
   "about.legend.fulfilled": "이루어진 소원",
   "about.legend.popular": "많은 '좋아요'를 받은 소원",
   "about.legend.seasonal": "계절별 색상: 봄, 여름, 가을, 겨울",
-  "about.legend.columbariumTitle": "납골당",
+  "about.legend.columbariumTitle": "봉안당",
   "about.legend.niche": "이루어지지 않은 소원 — ✿ 는 헌화 수",
   "about.legend.nichePopular": "많은 헌화를 받은 소원",
 
@@ -101,7 +101,7 @@
   "search.searching": "검색 중…",
   "search.noResults": "소원을 찾을 수 없어요.",
   "search.board.tree": "나무",
-  "search.board.columbarium": "납골당",
+  "search.board.columbarium": "봉안당",
   "search.goTo": "이동",
 
   "btn.close": "닫기",
