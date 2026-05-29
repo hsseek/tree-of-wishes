@@ -38,6 +38,14 @@ class Wish(Base):
     like_records = relationship("LikeRecord", back_populates="wish", cascade="all, delete-orphan")
     view_records = relationship("ViewRecord", back_populates="wish", cascade="all, delete-orphan")
 
+    __table_args__ = (
+        # Serves the expiry sweep (board + status + due_date range) run on every page load,
+        # and the board filter shared by both list queries and capacity counts.
+        Index("ix_wishes_board_status_due", "board", "status", "due_date"),
+        # Serves the columbarium listing: WHERE board='columbarium' ORDER BY due_date DESC.
+        Index("ix_wishes_board_due", "board", "due_date"),
+    )
+
 
 def effective_age_expr():
     """SQLAlchemy expression for ordering: fulfilled_at if fulfilled, else created_at."""
@@ -91,6 +99,8 @@ class ViewRecord(Base):
 
     __table_args__ = (
         Index("ix_view_records_wish_ip", "wish_id", "ip"),
+        # Serves check_view_rate: WHERE ip=? AND created_at>=? on a table that grows per view.
+        Index("ix_view_records_ip_created", "ip", "created_at"),
     )
 
 
