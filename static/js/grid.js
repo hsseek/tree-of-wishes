@@ -130,7 +130,7 @@ class FireflyCanvas {
     }
 
     const W = this.container.offsetWidth || window.innerWidth;
-    const density_coeff = 1.5; // current density; double → twice as dense, halve → half as dense
+    const density_coeff = 1.15; // current density; double → twice as dense, halve → half as dense
     const canvasH = Math.max(n * 30, window.innerHeight * 1.2) / density_coeff;
     this.container.style.height = canvasH + 'px';
 
