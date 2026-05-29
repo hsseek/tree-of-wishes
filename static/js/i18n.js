@@ -1,6 +1,7 @@
 /**
  * i18n — minimal translation layer.
- * Translations are fetched once from /static/locales/{lang}.json and cached.
+ * On first load, uses server-inlined translations (no fetch, no flash).
+ * On language toggle, fetches the new locale and sets a cookie for the next server render.
  */
 const i18n = (() => {
   let _lang = 'en';
@@ -23,8 +24,14 @@ const i18n = (() => {
   }
 
   async function init() {
-    _lang = detectLang();
-    _translations = await load(_lang);
+    // Use server-inlined translations if available — no fetch, no flash
+    if (window.TOW_TRANSLATIONS && window.TOW_LANG) {
+      _lang = window.TOW_LANG;
+      _translations = window.TOW_TRANSLATIONS;
+    } else {
+      _lang = detectLang();
+      _translations = await load(_lang);
+    }
     document.documentElement.lang = _lang;
     applyToDOM();
   }
@@ -49,6 +56,8 @@ const i18n = (() => {
   }
 
   async function setLang(lang) {
+    // Persist to cookie so the server inlines the correct locale on next page load
+    document.cookie = `tow_lang=${lang}; path=/; max-age=31536000; SameSite=Lax`;
     localStorage.setItem('tow_lang', lang);
     _lang = lang;
     _translations = await load(lang);

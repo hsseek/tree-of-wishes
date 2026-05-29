@@ -38,6 +38,9 @@ BASE_URL        = os.getenv("BASE_URL", "http://localhost:8000").rstrip("/")
 GOOGLE_CLIENT_ID     = os.getenv("GOOGLE_CLIENT_ID", "")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
 
+# Admin
+ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "")
+
 # Report / contact email (SMTP)
 REPORT_EMAIL = os.getenv("REPORT_EMAIL", "")
 SMTP_HOST    = os.getenv("SMTP_HOST", "")

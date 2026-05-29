@@ -28,7 +28,7 @@ from ..services.rate_limit import (
 from ..config import (
     MAX_FILE_SIZE_BYTES, ALLOWED_MIME_TYPES, UPLOAD_DIR,
     REPORT_EMAIL, SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS,
-    BASE_URL,
+    BASE_URL, ADMIN_EMAIL,
 )
 from ..models import User
 
@@ -43,11 +43,15 @@ def _verify_password(plain: str, hashed: str) -> bool:
     return bcrypt.checkpw(plain.encode(), hashed.encode())
 
 
-def _check_auth(wish: "Wish", password: Optional[str], request: Request) -> None:
-    """Pass if the session user owns the wish; otherwise require a valid password."""
+def _check_auth(wish: "Wish", password: Optional[str], request: Request, db: Session) -> None:
+    """Pass if the session user owns the wish, is admin, or provides a valid password."""
     user_id = request.session.get("user_id")
     if user_id and wish.owner_id is not None and wish.owner_id == user_id:
         return
+    if user_id and ADMIN_EMAIL:
+        user = db.query(User).filter(User.id == user_id).first()
+        if user and user.email == ADMIN_EMAIL:
+            return
     if not wish.password_hash or not _verify_password(password or "", wish.password_hash):
         raise HTTPException(403, "Wrong password")
 
@@ -306,7 +310,7 @@ def verify_password(
     wish = db.query(Wish).filter(Wish.id == wish_id, Wish.board == "tree").first()
     if not wish:
         raise HTTPException(404, "Wish not found")
-    _check_auth(wish, password, request)
+    _check_auth(wish, password, request, db)
     return {"ok": True}
 
 
@@ -325,7 +329,7 @@ async def edit_wish(
     wish = db.query(Wish).filter(Wish.id == wish_id).first()
     if not wish:
         raise HTTPException(404, "Wish not found")
-    _check_auth(wish, password, request)
+    _check_auth(wish, password, request, db)
 
     is_owner = request.session.get("user_id") == wish.owner_id and wish.owner_id is not None
 
@@ -379,7 +383,7 @@ def fulfill_wish(
     wish = db.query(Wish).filter(Wish.id == wish_id, Wish.board == "tree").first()
     if not wish:
         raise HTTPException(404, "Wish not found")
-    _check_auth(wish, password, request)
+    _check_auth(wish, password, request, db)
     if wish.status == WishStatus.fulfilled:
         raise HTTPException(409, "Already fulfilled")
     wish.status = WishStatus.fulfilled
@@ -401,7 +405,7 @@ def unfulfill_wish(
     wish = db.query(Wish).filter(Wish.id == wish_id, Wish.board == "tree").first()
     if not wish:
         raise HTTPException(404, "Wish not found")
-    _check_auth(wish, password, request)
+    _check_auth(wish, password, request, db)
     if wish.status != WishStatus.fulfilled:
         raise HTTPException(409, "Wish is not fulfilled")
     wish.status = WishStatus.active
@@ -420,10 +424,10 @@ def delete_wish(
     password: Optional[str] = Form(None),
     db: Session = Depends(get_db),
 ):
-    wish = db.query(Wish).filter(Wish.id == wish_id, Wish.board == "tree").first()
+    wish = db.query(Wish).filter(Wish.id == wish_id).first()
     if not wish:
         raise HTTPException(404, "Wish not found")
-    _check_auth(wish, password, request)
+    _check_auth(wish, password, request, db)
     if wish.attachment_path:
         path = UPLOAD_DIR / wish.attachment_path
         if path.exists():

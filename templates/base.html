@@ -79,7 +79,7 @@
   </div>
 </div>
 
-<script>const CURRENT_USER_ID = {{ current_user.id if current_user else 'null' }}; const TOW_USER_LANG = {{ ('"' + current_user.language + '"') if current_user and current_user.language else 'null' }}; const TOW_SV = '{{ sv }}';</script>
+<script>const CURRENT_USER_ID = {{ current_user.id if current_user else 'null' }}; const TOW_USER_LANG = {{ ('"' + current_user.language + '"') if current_user and current_user.language else 'null' }}; const IS_ADMIN = {{ 'true' if is_admin else 'false' }}; const TOW_SV = '{{ sv }}'; window.TOW_LANG = '{{ lang }}'; window.TOW_TRANSLATIONS = {{ translations_json | safe }};</script>
 <script src="/static/js/i18n.js?v={{ sv }}"></script>
 <script>
 (function () {

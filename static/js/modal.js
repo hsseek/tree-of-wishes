@@ -21,15 +21,16 @@ class WishModal {
     this._isOwner = typeof CURRENT_USER_ID !== 'undefined'
       && CURRENT_USER_ID !== null
       && wish.owner_id === CURRENT_USER_ID;
+    this._isAdmin = typeof IS_ADMIN !== 'undefined' && IS_ADMIN === true;
 
     fetch(`/api/wishes/${wish.id}/view`, { method: 'POST' });
     this._renderMain(wish);
     this.el.classList.add('open');
     this.backdrop.classList.add('open');
 
-    // Owners skip the unlock step entirely
-    if (this._isOwner) {
-      if (this.board === 'tree') {
+    // Owners and admins skip the unlock step entirely
+    if (this._isOwner || this._isAdmin) {
+      if (this.board === 'tree' || this._isAdmin) {
         this._renderEditPanel();
       } else {
         this._renderAttachmentPanel();
@@ -74,8 +75,8 @@ class WishModal {
       }
     }
 
-    // Show unlock section only for non-owners on the tree board
-    const showUnlock = this.board === 'tree' && !this._isOwner;
+    // Show unlock section only for non-owners/non-admins on the tree board
+    const showUnlock = this.board === 'tree' && !this._isOwner && !this._isAdmin;
 
     body.innerHTML = `
       <div class="modal-status ${wish.status}">${statusLabel}</div>
@@ -176,7 +177,7 @@ class WishModal {
     const isFulfilled = wish.status === 'fulfilled';
     panel.style.display = '';
 
-    const showAttachment = this._isOwner;
+    const showAttachment = this._isOwner || this._isAdmin;
     const attachmentControls = showAttachment ? `
       <div class="edit-row">
         ${wish.has_attachment
@@ -195,9 +196,9 @@ class WishModal {
         ${attachmentControls}
         <div class="edit-actions">
           <button id="btn-save" class="btn-primary">${i18n.t('wish.save')}</button>
-          <button id="btn-fulfill" class="btn-secondary">
+          ${wish.status !== 'dead' ? `<button id="btn-fulfill" class="btn-secondary">
             ${isFulfilled ? i18n.t('wish.markUnfulfilled') : i18n.t('wish.markFulfilled')}
-          </button>
+          </button>` : ''}
           <button id="btn-delete" class="btn-danger">${i18n.t('wish.delete')}</button>
         </div>
       </div>`;
