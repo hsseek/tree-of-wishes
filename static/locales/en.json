@@ -36,6 +36,7 @@
   "about.legend.title": "Visual Guide",
   "about.legend.treeTitle": "Tree of Wishes",
   "about.legend.active": "Active wish",
+  "about.legend.new": "New wish — added within the last day",
   "about.legend.dying": "Expiring soon — 7 days or fewer",
   "about.legend.critical": "Last day",
   "about.legend.fulfilled": "Wish came true",
@@ -116,5 +117,15 @@
   "error.fileTooLarge": "File too large (max 5 MB)",
   "error.fileTypeNotAllowed": "File type not allowed",
   "error.dueDatePast": "Due date must be in the future",
-  "error.generic": "Something went wrong. Please try again."
+  "error.generic": "Something went wrong. Please try again.",
+
+  "shortcuts.title": "Keyboard shortcuts",
+  "shortcuts.next": "Next wish (older)",
+  "shortcuts.prev": "Previous wish (younger)",
+  "shortcuts.close": "Close",
+  "shortcuts.search": "Focus search",
+  "shortcuts.random": "Open a random wish",
+  "shortcuts.help": "Show this help",
+  "shortcuts.hint": "Shortcuts work when you're not typing in a field.",
+  "shortcuts.noWishes": "No wishes to open yet."
 }

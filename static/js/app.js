@@ -17,6 +17,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   window.wishGrid = grid;
   await grid.init();
 
+  _initShortcuts();
+
   // Auto-open a wish linked from search on another page
   const openId = new URLSearchParams(window.location.search).get('open');
   if (openId) {
@@ -148,4 +150,90 @@ function _showToast(msg, type = 'info') {
   document.body.appendChild(t);
   requestAnimationFrame(() => t.classList.add('toast-show'));
   setTimeout(() => { t.classList.remove('toast-show'); setTimeout(() => t.remove(), 400); }, 2800);
+}
+
+// ─── Keyboard shortcuts ──────────────────────────────────────────────────────────
+
+function _initShortcuts() {
+  document.addEventListener('keydown', e => {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+    // Don't hijack typing. (The modal binds its own global Esc handler, so Esc
+    // still closes the modal even from a field.)
+    const ae = document.activeElement;
+    const typing = ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA'
+      || ae.tagName === 'SELECT' || ae.isContentEditable);
+    if (typing) return;
+
+    const modal = window.wishModal;
+
+    switch (e.key) {
+      case 'j': // next wish — older
+        if (modal?.isOpen) { e.preventDefault(); modal.navigate('older'); }
+        break;
+      case 'k': // previous wish — younger
+        if (modal?.isOpen) { e.preventDefault(); modal.navigate('younger'); }
+        break;
+      case '/': // focus search
+        e.preventDefault();
+        modal?.close();
+        document.getElementById('search-input')?.focus();
+        break;
+      case 'r': // open a random wish
+        e.preventDefault();
+        _openRandomWish();
+        break;
+      case '?': // toggle help
+        e.preventDefault();
+        _toggleShortcutsHelp();
+        break;
+      case 'Escape': { // close the help overlay (modal handles its own Esc)
+        const ov = document.getElementById('shortcuts-overlay');
+        if (ov?.classList.contains('open')) _toggleShortcutsHelp(false);
+        break;
+      }
+    }
+  });
+}
+
+function _openRandomWish() {
+  const wishes = window.wishGrid?.wishes || [];
+  if (!wishes.length) { _showToast(i18n.t('shortcuts.noWishes'), 'info'); return; }
+  const w = wishes[Math.floor(Math.random() * wishes.length)];
+  window.wishModal?.open(w);
+}
+
+function _toggleShortcutsHelp(force) {
+  const ov = document.getElementById('shortcuts-overlay') || _buildShortcutsHelp();
+  const show = force === undefined ? !ov.classList.contains('open') : force;
+  ov.classList.toggle('open', show);
+}
+
+function _buildShortcutsHelp() {
+  const rows = [
+    ['j',   i18n.t('shortcuts.next')],
+    ['k',   i18n.t('shortcuts.prev')],
+    ['r',   i18n.t('shortcuts.random')],
+    ['/',   i18n.t('shortcuts.search')],
+    ['Esc', i18n.t('shortcuts.close')],
+    ['?',   i18n.t('shortcuts.help')],
+  ].map(([key, label]) =>
+    `<div class="sc-row"><kbd class="sc-key">${_esc(key)}</kbd><span class="sc-label">${_esc(label)}</span></div>`
+  ).join('');
+
+  const ov = document.createElement('div');
+  ov.id = 'shortcuts-overlay';
+  ov.className = 'shortcuts-overlay';
+  ov.innerHTML = `
+    <div class="shortcuts-card" role="dialog" aria-modal="true">
+      <button class="shortcuts-close" aria-label="Close">×</button>
+      <h3 class="shortcuts-title">${_esc(i18n.t('shortcuts.title'))}</h3>
+      <div class="sc-rows">${rows}</div>
+      <p class="shortcuts-hint">${_esc(i18n.t('shortcuts.hint'))}</p>
+    </div>`;
+  document.body.appendChild(ov);
+
+  ov.addEventListener('click', e => { if (e.target === ov) _toggleShortcutsHelp(false); });
+  ov.querySelector('.shortcuts-close').addEventListener('click', () => _toggleShortcutsHelp(false));
+  return ov;
 }

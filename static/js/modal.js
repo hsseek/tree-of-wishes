@@ -40,6 +40,28 @@ class WishModal {
     this._currentWish = null;
   }
 
+  get isOpen() { return this.el.classList.contains('open'); }
+
+  /**
+   * Step to an adjacent wish by creation time while the modal is open.
+   * direction 'older' → next (earlier created_at); 'younger' → previous.
+   * Wishes are ordered globally by created_at, so neighbours may sit far
+   * apart on the tree — that's expected.
+   */
+  navigate(direction) {
+    if (!this.isOpen || !this._currentWish) return;
+    const list = (window.wishGrid?.wishes || [])
+      .filter(w => w.created_at)
+      .sort((a, b) => _ts(b.created_at) - _ts(a.created_at)); // youngest → oldest
+    if (list.length < 2) return;
+
+    let idx = list.findIndex(w => w.id === this._currentWish.id);
+    if (idx === -1) return;
+    idx += (direction === 'older' ? 1 : -1);
+    if (idx < 0 || idx >= list.length) return; // stop at the ends
+    this.open(list[idx]);
+  }
+
   _renderMain(wish) {
     const body = this.el.querySelector('.modal-body');
     const statusLabel = {
@@ -305,5 +327,11 @@ function _esc(str) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
+}
+
+/** Parse a backend timestamp as UTC (created_at is naive UTC, no tz suffix). */
+function _ts(s) {
+  const hasTz = /[zZ]|[+-]\d{2}:?\d{2}$/.test(s);
+  return new Date(hasTz ? s : s + 'Z').getTime();
 }
 

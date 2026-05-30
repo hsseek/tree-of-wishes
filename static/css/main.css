@@ -20,6 +20,7 @@
   /* Firefly colors */
   --ff-active:    #ffa830;
   --ff-glow-a:    rgba(255, 168, 48, 0.72);
+  --ff-new:       #8fd14a;
   --ff-fulfilled: #ffffff;
   --ff-glow-f:    rgba(255, 248, 200, 0.98);
 }
@@ -347,6 +348,17 @@ body { min-height: 100vh; font-family: var(--font); background: var(--bg); color
     drop-shadow(0 0 6px rgba(255, 150, 20, 0.85))
     drop-shadow(0 0 14px rgba(255, 120, 10, 0.5));
 }
+
+/* New wish (created <24h, within newest 25%): muted lime-green glyph + soft glow.
+   Takes visual precedence over the gold "popular" treatment. */
+.ff-new .ff-glyph.ff-active {
+  color: var(--ff-new);
+  text-shadow:
+    0 0 4px  rgba(143, 209, 74, 0.85),
+    0 0 12px rgba(120, 190, 60, 0.55),
+    0 0 22px rgba(100, 170, 50, 0.35);
+}
+.ff-new .ff-label { color: var(--ff-new); opacity: 0.85; text-shadow: 0 0 6px rgba(143, 209, 74, 0.6); }
 
 /* Near-expiry dying visualization */
 .ff-dying .ff-glyph.ff-active {
@@ -886,3 +898,64 @@ body.season-winter .ff-popular .ff-glyph {
 }
 @media (min-width: 760px)  { .niche, .load-more-niche { width: 100px; } }
 @media (min-width: 1000px) { .niche, .load-more-niche { width: 110px; } }
+
+/* ─── Keyboard shortcuts help overlay ─────────────────────────────────────────── */
+.shortcuts-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(5, 8, 16, 0.72);
+  backdrop-filter: blur(2px);
+}
+.shortcuts-overlay.open { display: flex; }
+
+.shortcuts-card {
+  position: relative;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 10px);
+  padding: 24px 28px;
+  width: min(360px, 90vw);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+}
+.shortcuts-title {
+  margin: 0 0 16px;
+  font-size: 16px;
+  color: var(--text);
+  letter-spacing: 0.5px;
+}
+.shortcuts-close {
+  position: absolute;
+  top: 10px; right: 12px;
+  background: none; border: none;
+  color: var(--text-muted);
+  font-size: 22px; line-height: 1;
+  cursor: pointer;
+}
+.shortcuts-close:hover { color: var(--text); }
+
+.sc-rows { display: flex; flex-direction: column; gap: 10px; }
+.sc-row  { display: flex; align-items: center; gap: 14px; }
+.sc-key {
+  flex: 0 0 auto;
+  min-width: 34px;
+  text-align: center;
+  padding: 3px 8px;
+  border: 1px solid var(--border);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  font-family: monospace;
+  font-size: 13px;
+}
+.sc-label { color: var(--text-muted); font-size: 13px; }
+.shortcuts-hint {
+  margin: 16px 0 0;
+  font-size: 11px;
+  color: var(--text-muted);
+  opacity: 0.85;
+}

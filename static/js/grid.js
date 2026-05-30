@@ -12,6 +12,7 @@ class WishGrid {
   }
   async init()     { return this._impl.init(); }
   async loadMore() { return this._impl.loadMore(); }
+  get wishes()     { return this._impl.wishes || []; }
 }
 
 // ─── WishPopover ──────────────────────────────────────────────────────────────
@@ -137,9 +138,12 @@ class FireflyCanvas {
     const positions = _scatter(n, W, canvasH, 30 / density_coeff, 40);
 
     const popularThreshold = _top10Threshold(this.wishes);
+    const newIds = _newWishIds(this.wishes);
     this.wishes.forEach((wish, i) => {
       const { x, y } = positions[i];
-      this.container.appendChild(this._makeFirefly(wish, x, y, wish.likes >= popularThreshold));
+      this.container.appendChild(
+        this._makeFirefly(wish, x, y, wish.likes >= popularThreshold, newIds.has(wish.id))
+      );
     });
 
     if (this.hasMore) {
@@ -151,7 +155,7 @@ class FireflyCanvas {
     }
   }
 
-  _makeFirefly(wish, x, y, isPopular = false) {
+  _makeFirefly(wish, x, y, isPopular = false, isNew = false) {
     const fulfilled = wish.status === 'fulfilled';
 
     // Compute days until expiry for dying visualization (active wishes only)
@@ -176,7 +180,9 @@ class FireflyCanvas {
 
     const wrap = document.createElement('div');
     let wrapClass = 'ff-wrap';
-    if (isPopular)  wrapClass += ' ff-popular';
+    // "New" takes visual precedence over the gold "popular" glow.
+    if (isNew)           wrapClass += ' ff-new';
+    else if (isPopular)  wrapClass += ' ff-popular';
     if (isCritical) wrapClass += ' ff-critical';
     else if (isDying) wrapClass += ' ff-dying';
     wrap.className = wrapClass;
@@ -442,4 +448,28 @@ function _top10Threshold(wishes) {
   const cutoffIdx = Math.max(1, Math.ceil(sorted.length * 0.1)) - 1;
   const threshold = sorted[cutoffIdx];
   return threshold > 0 ? threshold : Infinity;
+}
+
+/**
+ * "New" wishes: created within the last 24h AND within the newest 25% of all
+ * wishes (the cap keeps new ones from dominating a freshly-seeded tree).
+ * Returns a Set of wish ids.
+ */
+function _newWishIds(wishes) {
+  const ids = new Set();
+  if (!wishes.length) return ids;
+  const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+  const young = wishes
+    .filter(w => w.created_at && _utcMillis(w.created_at) >= cutoff)
+    .sort((a, b) => _utcMillis(b.created_at) - _utcMillis(a.created_at));
+  const cap = Math.floor(wishes.length * 0.25);
+  young.slice(0, cap).forEach(w => ids.add(w.id));
+  return ids;
+}
+
+/** Parse a backend timestamp as UTC. created_at is naive UTC (no tz suffix),
+ *  so append 'Z' unless an explicit timezone/Z is already present. */
+function _utcMillis(ts) {
+  const hasTz = /[zZ]|[+-]\d{2}:?\d{2}$/.test(ts);
+  return new Date(hasTz ? ts : ts + 'Z').getTime();
 }
