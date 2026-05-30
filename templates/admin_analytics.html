@@ -51,12 +51,15 @@
   /* Horizontal-scroll fallback on narrow screens instead of clipped columns. */
   .analytics-table-wrap { overflow-x: auto; }
   .analytics-table {
-    width: 100%; border-collapse: collapse;
-    font-variant-numeric: tabular-nums; white-space: nowrap;
+    width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums;
   }
   .analytics-table th, .analytics-table td {
-    padding: 0.5rem 0.75rem; text-align: right; border-bottom: 1px solid rgba(255,255,255,0.12);
+    padding: 0.5rem 0.5rem; text-align: right; border-bottom: 1px solid rgba(255,255,255,0.12);
   }
+  /* Let multi-word headers wrap to keep the table within the panel; keep the
+     short data cells (dates, numbers) on a single line. */
+  .analytics-table th { white-space: normal; vertical-align: bottom; }
+  .analytics-table td { white-space: nowrap; }
   .analytics-table th:first-child, .analytics-table td:first-child { text-align: left; }
   .analytics-table thead th { font-weight: 600; opacity: 0.8; }
   .analytics-table tbody tr:hover { background: rgba(255,255,255,0.05); }
