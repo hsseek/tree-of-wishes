@@ -120,8 +120,8 @@
   "error.generic": "Something went wrong. Please try again.",
 
   "shortcuts.title": "Keyboard shortcuts",
-  "shortcuts.next": "Next wish (older)",
-  "shortcuts.prev": "Previous wish (younger)",
+  "shortcuts.older": "Older wish",
+  "shortcuts.younger": "Younger wish",
   "shortcuts.close": "Close",
   "shortcuts.search": "Focus search",
   "shortcuts.random": "Open a random wish",

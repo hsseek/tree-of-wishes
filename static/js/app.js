@@ -211,8 +211,8 @@ function _toggleShortcutsHelp(force) {
 
 function _buildShortcutsHelp() {
   const rows = [
-    ['j',   i18n.t('shortcuts.next')],
-    ['k',   i18n.t('shortcuts.prev')],
+    ['j',   i18n.t('shortcuts.older')],
+    ['k',   i18n.t('shortcuts.younger')],
     ['r',   i18n.t('shortcuts.random')],
     ['/',   i18n.t('shortcuts.search')],
     ['Esc', i18n.t('shortcuts.close')],

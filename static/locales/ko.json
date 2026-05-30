@@ -119,12 +119,12 @@
   "error.dueDatePast": "기한은 오늘 이후여야 합니다",
   "error.generic": "오류가 발생했습니다. 다시 시도해 주세요.",
 
-  "shortcuts.title": "키보드 단축키",
-  "shortcuts.next": "다음 소원 (오래된 것)",
-  "shortcuts.prev": "이전 소원 (최근 것)",
-  "shortcuts.close": "닫기",
+  "shortcuts.title": "단축키",
+  "shortcuts.older": "이전 소원",
+  "shortcuts.younger": "최근 소원",
+  "shortcuts.close": "소원 닫기",
   "shortcuts.search": "검색창으로 이동",
-  "shortcuts.random": "무작위 소원 열기",
+  "shortcuts.random": "무작위 소원 보기",
   "shortcuts.help": "이 도움말 보기",
   "shortcuts.hint": "입력 중이 아닐 때 단축키를 사용할 수 있습니다.",
   "shortcuts.noWishes": "아직 열 수 있는 소원이 없습니다."
