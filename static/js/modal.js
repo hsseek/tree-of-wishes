@@ -213,7 +213,7 @@ class WishModal {
       </div>`;
 
     document.getElementById('btn-save').addEventListener('click', () => this._doSave());
-    document.getElementById('btn-fulfill').addEventListener('click', () => this._doFulfill());
+    document.getElementById('btn-fulfill')?.addEventListener('click', () => this._doFulfill());
     document.getElementById('btn-delete').addEventListener('click', () => this._doDelete());
     document.getElementById('btn-remove-attachment')?.addEventListener('click', () => this._doRemoveAttachment());
   }
