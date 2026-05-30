@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% set active_page = 'admin' %}
+{% block title %}Analytics — Tree of Wishes{% endblock %}
+
+{% block content %}
+<div class="page-content">
+  <div class="page-header">
+    <h1 class="page-title">Analytics</h1>
+  </div>
+  <div class="content-panel">
+    <p class="analytics-summary">
+      Last {{ days }} days —
+      <strong>{{ totals.visits }}</strong> visits
+      ({{ totals.anon }} anonymous, {{ totals.reg }} registered),
+      <strong>{{ totals.registrations }}</strong> new registrations.
+    </p>
+
+    <table class="analytics-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Anonymous</th>
+          <th>Registered</th>
+          <th>Total visits</th>
+          <th>Registrations</th>
+          <th>Avg. time on page</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          <td>{{ row.date }}</td>
+          <td>{{ row.anon }}</td>
+          <td>{{ row.registered }}</td>
+          <td>{{ row.total }}</td>
+          <td>{{ row.registrations }}</td>
+          <td>{{ row.avg_dwell }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<style>
+  .analytics-summary { margin-bottom: 1.25rem; }
+  .analytics-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  .analytics-table th, .analytics-table td {
+    padding: 0.5rem 0.75rem; text-align: right; border-bottom: 1px solid rgba(255,255,255,0.12);
+  }
+  .analytics-table th:first-child, .analytics-table td:first-child { text-align: left; }
+  .analytics-table thead th { font-weight: 600; opacity: 0.8; }
+  .analytics-table tbody tr:hover { background: rgba(255,255,255,0.05); }
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  await i18n.init();
+  document.getElementById('lang-toggle')?.addEventListener('click', async () => {
+    const next = i18n.getLang() === 'en' ? 'ko' : 'en';
+    await i18n.setLang(next);
+    document.getElementById('lang-toggle').textContent = next === 'en' ? '한국어' : 'English';
+  });
+});
+</script>
+{% endblock %}

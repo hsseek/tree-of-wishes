@@ -1,7 +1,7 @@
 import enum
 from datetime import datetime
 from sqlalchemy import (
-    Column, Integer, String, DateTime, Date, Enum as SAEnum,
+    Column, Integer, String, DateTime, Date, Boolean, Enum as SAEnum,
     ForeignKey, UniqueConstraint, Index, case
 )
 from sqlalchemy.orm import relationship
@@ -111,3 +111,31 @@ class CreationRateRecord(Base):
     id = Column(Integer, primary_key=True, index=True)
     ip = Column(String, nullable=False, index=True)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+
+class DailyVisit(Base):
+    """One row per unique visitor per day. visitor_key is "u{user_id}" for a
+    logged-in user, else the anonymous "tow_vid" cookie value. The unique
+    constraint keeps this table to one row per visitor per day."""
+    __tablename__ = "daily_visits"
+
+    id = Column(Integer, primary_key=True, index=True)
+    day = Column(Date, nullable=False)
+    visitor_key = Column(String, nullable=False)
+    registered = Column(Boolean, nullable=False, default=False)
+
+    __table_args__ = (
+        UniqueConstraint("day", "visitor_key", name="uq_daily_visit"),
+        # Serves the dashboard: GROUP BY day, registered over a date range.
+        Index("ix_daily_visits_day", "day"),
+    )
+
+
+class DailyDwell(Base):
+    """Daily rollup of time-on-page samples. Kept as a single row per day
+    (running total + count) so the table never grows per page view."""
+    __tablename__ = "daily_dwell"
+
+    day = Column(Date, primary_key=True)
+    total_seconds = Column(Integer, nullable=False, default=0)
+    sample_count = Column(Integer, nullable=False, default=0)

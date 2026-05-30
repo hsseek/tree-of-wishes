@@ -18,6 +18,7 @@ from sqlalchemy import or_, asc, desc
 from sqlalchemy import text as sa_text
 from ..database import get_db
 from ..models import Wish, WishStatus, effective_age_expr
+from ..services.analytics import record_dwell
 from ..services.capacity import ensure_tree_capacity
 from ..services.rate_limit import (
     check_creation_rate, record_creation,
@@ -541,6 +542,16 @@ def set_language(
     user.language = language
     db.commit()
     return {"language": language}
+
+
+# ─── Analytics ──────────────────────────────────────────────────────────────
+
+@router.post("/track/dwell")
+def track_dwell(s: int = Query(0, ge=0)):
+    """Record one time-on-page sample (seconds). Called via navigator.sendBeacon,
+    so it returns 204 and never blocks the client."""
+    record_dwell(s)
+    return JSONResponse(status_code=204, content=None)
 
 
 # ─── Health ───────────────────────────────────────────────────────────────────
