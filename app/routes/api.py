@@ -319,7 +319,7 @@ def verify_password(
     password: Optional[str] = Form(None),
     db: Session = Depends(get_db),
 ):
-    wish = db.query(Wish).filter(Wish.id == wish_id, Wish.board == "tree").first()
+    wish = db.query(Wish).filter(Wish.id == wish_id).first()
     if not wish:
         raise HTTPException(404, "Wish not found")
     _check_auth(wish, password, request, db)

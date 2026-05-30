@@ -71,8 +71,9 @@ class WishModal {
       }
     }
 
-    // Show unlock section only for non-owners/non-admins on the tree board
-    const showUnlock = this.board === 'tree' && !this._isOwner && !this._isAdmin;
+    // Show unlock section for non-owners/non-admins on either board, so anonymous
+    // creators can unlock with their password and edit/delete (tree and columbarium alike).
+    const showUnlock = !this._isOwner && !this._isAdmin;
 
     body.innerHTML = `
       <div class="modal-status ${wish.status}">${statusLabel}</div>
@@ -254,11 +255,7 @@ class WishModal {
       _showToast('Attachment removed', 'success');
       this._renderMain(updated);
       document.querySelector('.unlock-section')?.remove();
-      if (this.board === 'tree') {
-        this._renderEditPanel();
-      } else {
-        this._renderAttachmentPanel();
-      }
+      this._renderEditPanel();
     }
   }
 
@@ -300,27 +297,6 @@ class WishModal {
     }
   }
 
-  _renderAttachmentPanel() {
-    const panel = document.getElementById('edit-panel');
-    const wish = this._currentWish;
-    panel.style.display = '';
-    panel.innerHTML = `
-      <div class="edit-panel">
-        <div class="edit-row">
-          ${wish.has_attachment
-            ? `<button id="btn-remove-attachment" class="btn-danger-sm">${i18n.t('wish.removeAttachment')}</button>`
-            : ''}
-          <label class="field-label">${i18n.t(wish.has_attachment ? 'wish.replaceAttachment' : 'wish.attachment')}</label>
-          <input type="file" id="edit-attachment" accept="image/*,application/pdf,text/plain" />
-          <span class="form-hint">${i18n.t('wish.attachmentHint')}</span>
-        </div>
-        <div class="edit-actions">
-          <button id="btn-save" class="btn-primary">${i18n.t('wish.save')}</button>
-        </div>
-      </div>`;
-    document.getElementById('btn-save').addEventListener('click', () => this._doSave());
-    document.getElementById('btn-remove-attachment')?.addEventListener('click', () => this._doRemoveAttachment());
-  }
 }
 
 function _esc(str) {
