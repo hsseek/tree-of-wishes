@@ -7,7 +7,7 @@
   <div class="page-header">
     <h1 class="page-title">Analytics</h1>
   </div>
-  <div class="content-panel">
+  <div class="content-panel analytics-panel">
     <p class="analytics-summary">
       Last {{ days }} days —
       <strong>{{ totals.visits }}</strong> visits
@@ -15,6 +15,7 @@
       <strong>{{ totals.registrations }}</strong> new registrations.
     </p>
 
+    <div class="analytics-table-wrap">
     <table class="analytics-table">
       <thead>
         <tr>
@@ -39,12 +40,20 @@
         {% endfor %}
       </tbody>
     </table>
+    </div>
   </div>
 </div>
 
 <style>
+  /* Wider than the default 520px content-panel so all six columns fit. */
+  .analytics-panel { max-width: 760px; }
   .analytics-summary { margin-bottom: 1.25rem; }
-  .analytics-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  /* Horizontal-scroll fallback on narrow screens instead of clipped columns. */
+  .analytics-table-wrap { overflow-x: auto; }
+  .analytics-table {
+    width: 100%; border-collapse: collapse;
+    font-variant-numeric: tabular-nums; white-space: nowrap;
+  }
   .analytics-table th, .analytics-table td {
     padding: 0.5rem 0.75rem; text-align: right; border-bottom: 1px solid rgba(255,255,255,0.12);
   }
