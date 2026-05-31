@@ -161,7 +161,7 @@ def wish_deep_link(wish_id: int, request: Request, db: Session = Depends(get_db)
         "og_locale": "en_US" if lang == "en" else "ko_KR",
         "og_title": _wish_share_title(wish, lang),
         "og_description": teaser or default_desc,
-        "og_image": f"{BASE_URL}/static/og-default.png",
+        "og_image": f"{BASE_URL}/static/og-{_get_season()}.png",
         "og_url": f"{BASE_URL}/wish/{wish_id}?lang={lang}",
         "redirect_to": f"/{wish.board}?open={wish_id}",
     }

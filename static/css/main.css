@@ -758,7 +758,6 @@ body.season-winter .ff-popular .ff-glyph {
 .btn-oauth:hover { filter: brightness(1.08); transform: translateY(-1px); }
 
 .btn-oauth-google { background: #fff; color: #3c4043; }
-.btn-oauth-kakao  { background: #FEE500; color: #3C1E1E; }
 
 .oauth-icon { width: 20px; height: 20px; flex-shrink: 0; }
 
