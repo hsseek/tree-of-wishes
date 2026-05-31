@@ -12,7 +12,8 @@
       Last {{ days }} days —
       <strong>{{ totals.visits }}</strong> visits
       ({{ totals.anon }} anonymous, {{ totals.reg }} registered),
-      <strong>{{ totals.registrations }}</strong> new registrations.
+      <strong>{{ totals.registrations }}</strong> new registrations,
+      <strong>{{ totals.new_wishes }}</strong> new wishes.
     </p>
 
     <div class="analytics-table-wrap">
@@ -24,6 +25,7 @@
           <th>Registered</th>
           <th>Total visits</th>
           <th>Registrations</th>
+          <th>New wishes</th>
           <th>Avg. time on page</th>
         </tr>
       </thead>
@@ -35,6 +37,7 @@
           <td>{{ row.registered }}</td>
           <td>{{ row.total }}</td>
           <td>{{ row.registrations }}</td>
+          <td>{{ row.new_wishes }}</td>
           <td>{{ row.avg_dwell }}</td>
         </tr>
         {% endfor %}
@@ -45,8 +48,8 @@
 </div>
 
 <style>
-  /* Wider than the default 520px content-panel so all six columns fit. */
-  .analytics-panel { max-width: 760px; }
+  /* Wider than the default 520px content-panel so all seven columns fit. */
+  .analytics-panel { max-width: 860px; }
   .analytics-summary { margin-bottom: 1.25rem; }
   /* Horizontal-scroll fallback on narrow screens instead of clipped columns. */
   .analytics-table-wrap { overflow-x: auto; }

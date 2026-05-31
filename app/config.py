@@ -41,6 +41,11 @@ GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
 # Admin
 ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "")
 
+# Search-engine site verification (paste the token from each console; the meta
+# tag is only emitted when set). Naver Search Advisor / Google Search Console.
+NAVER_SITE_VERIFICATION  = os.getenv("NAVER_SITE_VERIFICATION", "")
+GOOGLE_SITE_VERIFICATION = os.getenv("GOOGLE_SITE_VERIFICATION", "")
+
 # Report / contact email (SMTP)
 REPORT_EMAIL = os.getenv("REPORT_EMAIL", "")
 SMTP_HOST    = os.getenv("SMTP_HOST", "")

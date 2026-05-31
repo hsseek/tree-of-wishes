@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="{{ lang | default('ko', true) }}">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ og_title }}</title>
+
+  {# Crawlers (KakaoTalk / Naver / Google / Twitter) read these; humans are
+     bounced to the board with the wish open by the script below. #}
+  <meta name="description" content="{{ og_description }}" />
+  <meta property="og:site_name" content="소원의 나무 · Tree of Wishes" />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="{{ og_title }}" />
+  <meta property="og:description" content="{{ og_description }}" />
+  <meta property="og:image" content="{{ og_image }}" />
+  <meta property="og:url" content="{{ og_url }}" />
+  <meta property="og:locale" content="{{ og_locale | default('ko_KR', true) }}" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="{{ og_title }}" />
+  <meta name="twitter:description" content="{{ og_description }}" />
+  <meta name="twitter:image" content="{{ og_image }}" />
+
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
+  <link rel="canonical" href="{{ og_url }}" />
+  <noscript><meta http-equiv="refresh" content="0; url={{ redirect_to }}" /></noscript>
+  <script>window.location.replace({{ redirect_to | tojson }});</script>
+  <style>
+    html,body{height:100%;margin:0;background:#14233b;color:#f3f7f4;
+      font-family:'Apple SD Gothic Neo',sans-serif;}
+    .c{height:100%;display:flex;flex-direction:column;align-items:center;
+      justify-content:center;gap:14px;text-align:center;padding:24px;}
+    a{color:#9bdcb6;}
+  </style>
+</head>
+<body>
+  <div class="c">
+    {% if lang == 'en' %}
+    <div>Taking you to Tree of Wishes…</div>
+    <div><a href="{{ redirect_to }}">Go now</a></div>
+    {% else %}
+    <div>소원의 나무로 이동하는 중…</div>
+    <div><a href="{{ redirect_to }}">바로 이동하기</a></div>
+    {% endif %}
+  </div>
+</body>
+</html>

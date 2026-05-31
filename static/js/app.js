@@ -152,6 +152,34 @@ function _showToast(msg, type = 'info') {
   setTimeout(() => { t.classList.remove('toast-show'); setTimeout(() => t.remove(), 400); }, 2800);
 }
 
+/** Copy text to the clipboard, returning true on success. Uses the async
+ *  Clipboard API only in secure contexts (it's absent or throws over plain
+ *  HTTP / LAN IPs); otherwise falls back to a hidden-textarea execCommand,
+ *  which still works on http and older browsers. Must run inside a user
+ *  gesture (e.g. a click handler) for the fallback to be allowed. */
+async function _copyText(text) {
+  if (window.isSecureContext && navigator.clipboard) {
+    try { await navigator.clipboard.writeText(text); return true; } catch (_) { /* fall through */ }
+  }
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.top = '-9999px';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    ta.setSelectionRange(0, text.length);
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    return ok;
+  } catch (_) {
+    return false;
+  }
+}
+
 // ─── Keyboard shortcuts ──────────────────────────────────────────────────────────
 
 function _initShortcuts() {

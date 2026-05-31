@@ -161,13 +161,12 @@ class WishModal {
   }
 
   async _doShare() {
-    const url = `${window.location.origin}/wish/${this._currentWish.id}`;
-    try {
-      await navigator.clipboard.writeText(url);
-      _showToast(i18n.t('wish.linkCopied'), 'success');
-    } catch (_) {
-      _showToast(url, 'info');
-    }
+    // Bake the current page language into the link so the OG preview matches it
+    // even when fetched by a crawler (which carries no language cookie).
+    const lang = (typeof i18n !== 'undefined' && i18n.getLang) ? i18n.getLang() : 'ko';
+    const url = `${window.location.origin}/wish/${this._currentWish.id}?lang=${lang}`;
+    const ok = await _copyText(url);
+    _showToast(ok ? i18n.t('wish.linkCopied') : url, ok ? 'success' : 'info');
   }
 
   async _doLike() {
