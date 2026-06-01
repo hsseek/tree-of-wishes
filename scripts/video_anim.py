@@ -8,8 +8,10 @@ breath — plus the real wishes fading in at the top and a brand handle.
 This is what lofi channels actually do: one gorgeous illustration + subtle
 animated overlay. Silent (add music in Instagram).
 
-Wishes are fetched from the live API (no DB needed → runs on any machine):
-set --base-url or TOW_BASE_URL to point elsewhere (default tree-of-wishes.fyi).
+Wishes are fetched from the live API's private reel endpoint (no DB needed →
+runs on any machine). Set REEL_API_TOKEN to the same secret the server uses;
+without it the endpoint refuses (404). --base-url / TOW_BASE_URL override the
+host (default tree-of-wishes.fyi).
 
 Usage:
     .venv/bin/python scripts/video_anim.py --image ART.png --ids 14 36
@@ -122,32 +124,45 @@ def text_alpha(t, start, hold, fade=0.7):
     return max(0.0, 1 - (lo - fade - hold) / fade)
 
 
+# Shared secret for the private reel endpoint — must match the server's
+# REEL_API_TOKEN. Set it in your environment; only you can then pull wishes.
+REEL_TOKEN = os.getenv("REEL_API_TOKEN", "")
+
+
 def _get_json(url):
-    # A browser-ish UA — Cloudflare 403s the default "Python-urllib" agent.
-    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (wish-reel)"})
+    headers = {"User-Agent": "Mozilla/5.0 (wish-reel)"}  # Cloudflare 403s default UA
+    if REEL_TOKEN:
+        headers["X-Reel-Token"] = REEL_TOKEN
+    req = urllib.request.Request(url, headers=headers)
     with urllib.request.urlopen(req, timeout=15) as r:
         return json.load(r)
 
 
+def _fetch_hint(e):
+    if isinstance(e, urllib.error.HTTPError) and e.code == 404:
+        print("  ⚠ private reel endpoint refused (404). Set REEL_API_TOKEN to the same "
+              "value as the server's, and make sure the server is deployed with it.")
+    else:
+        print(f"  ⚠ fetch failed: {e}")
+
+
 def fetch_wishes(ids, base_url):
-    """Fetch wishes by id from the live API (preserves the given order)."""
-    out = []
-    for wid in ids:
-        try:
-            out.append(_get_json(f"{base_url}/api/wishes/{wid}"))
-        except urllib.error.HTTPError as e:
-            print(f"  ⚠ wish {wid}: HTTP {e.code} (skipped)")
-        except Exception as e:                       # noqa: BLE001
-            print(f"  ⚠ wish {wid}: {e} (skipped)")
-    return out
+    """Fetch wishes by id from the private reel endpoint (preserves order)."""
+    try:
+        data = _get_json(f"{base_url}/api/reel/wishes?ids={','.join(map(str, ids))}")
+    except Exception as e:                            # noqa: BLE001
+        _fetch_hint(e)
+        return []
+    by_id = {w["id"]: w for w in data.get("wishes", [])}
+    return [by_id[i] for i in ids if i in by_id]
 
 
 def fetch_board_wishes(board, base_url, n):
     """Fallback when no ids are given — take the first n wishes of a board."""
     try:
-        return _get_json(f"{base_url}/api/wishes?board={board}").get("wishes", [])[:n]
+        return _get_json(f"{base_url}/api/reel/wishes?board={board}&limit={n}").get("wishes", [])
     except Exception as e:                            # noqa: BLE001
-        print(f"  ⚠ list fetch failed: {e}")
+        _fetch_hint(e)
         return []
 
 

@@ -8,3 +8,6 @@ uploads/
 dist/
 .venv/
 venv/
+
+# Generated Instagram reels (user art + wishes — regenerate, do not commit)
+instagram_videos/

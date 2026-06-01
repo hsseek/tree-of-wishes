@@ -1,5 +1,6 @@
 import uuid
 import mimetypes
+import secrets
 import smtplib
 from email.message import EmailMessage
 from datetime import datetime, date
@@ -29,7 +30,7 @@ from ..services.rate_limit import (
 from ..config import (
     MAX_FILE_SIZE_BYTES, ALLOWED_MIME_TYPES, UPLOAD_DIR,
     REPORT_EMAIL, SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS,
-    BASE_URL, ADMIN_EMAIL,
+    BASE_URL, ADMIN_EMAIL, REEL_API_TOKEN,
 )
 from ..models import User
 
@@ -189,6 +190,41 @@ def get_wish(wish_id: int, db: Session = Depends(get_db)):
     if not wish:
         raise HTTPException(404, "Wish not found")
     return _wish_to_dict(wish)
+
+
+# ─── Private reel endpoint ──────────────────────────────────────────────────────
+# Token-gated wish lookup for the Instagram reel generator. Only callers that send
+# the shared secret (X-Reel-Token) can use it; disabled (404) when no token is set.
+# The wish text itself is public on the site — this just keeps the tool's bulk
+# lookup private to the owner.
+
+@router.get("/reel/wishes")
+def reel_wishes(
+    request: Request,
+    ids: str = Query("", description="comma-separated wish ids, in order"),
+    board: str = Query("", regex="^(tree|columbarium|)$"),
+    limit: int = Query(3, ge=1, le=20),
+    db: Session = Depends(get_db),
+):
+    token = request.headers.get("X-Reel-Token", "")
+    if not REEL_API_TOKEN or not secrets.compare_digest(token, REEL_API_TOKEN):
+        raise HTTPException(404, "Not found")   # hide existence from others
+
+    if ids:
+        id_list = [int(x) for x in ids.split(",") if x.strip().isdigit()]
+        rows = db.query(Wish).filter(Wish.id.in_(id_list)).all()
+        order = {wid: i for i, wid in enumerate(id_list)}
+        rows.sort(key=lambda w: order.get(w.id, 1 << 30))
+    else:
+        q = db.query(Wish)
+        if board:
+            q = q.filter(Wish.board == board)
+        rows = q.limit(limit).all()
+    return {"wishes": [
+        {"id": w.id, "text": w.text, "board": w.board,
+         "status": w.status.value if w.status else None, "name": w.name}
+        for w in rows
+    ]}
 
 
 # ─── Record view ──────────────────────────────────────────────────────────────

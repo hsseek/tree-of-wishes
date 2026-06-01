@@ -41,6 +41,11 @@ GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
 # Admin
 ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "")
 
+# Private token for the reel-generator endpoint (/api/reel/wishes). When empty
+# the endpoint is disabled (404). Set the same value on the server and in the
+# tool's environment so only you can pull wishes for video generation.
+REEL_API_TOKEN = os.getenv("REEL_API_TOKEN", "")
+
 # Search-engine site verification (paste the token from each console; the meta
 # tag is only emitted when set). Naver Search Advisor / Google Search Console.
 NAVER_SITE_VERIFICATION  = os.getenv("NAVER_SITE_VERIFICATION", "")

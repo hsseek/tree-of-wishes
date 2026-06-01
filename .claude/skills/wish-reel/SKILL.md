@@ -62,6 +62,9 @@ slow relaxing pan · film grain + vignette · brand handle `tree-of-wishes.fyi` 
 - Reference look the user likes: lofi pixel landscapes/cities/interiors at dusk
   (see their `~/Downloads`). Match that *aesthetic* when choosing art.
 - Font `static/fonts/Galmuri11.ttf` is OFL (commercial-OK), bundled with a NOTICE.
-- The renderer fetches wishes over HTTP (API-based) — **no DB, runs on any machine**
-  with the repo + `ffmpeg` + `pillow`/`numpy`. The API must be reachable.
+- The renderer fetches wishes over HTTP from a **private, token-gated** endpoint
+  (`/api/reel/wishes`) — **no DB, runs on any machine** with the repo + `ffmpeg`
+  + `pillow`/`numpy`. Requires `REEL_API_TOKEN` in the environment, matching the
+  value the server is deployed with; without it the endpoint returns 404. The
+  wish text is public on the site — this just keeps the tool's bulk lookup private.
 - Outputs go to `instagram_videos/` which is git-ignored (they contain user wishes).
