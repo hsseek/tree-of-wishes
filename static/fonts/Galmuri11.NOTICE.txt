@@ -1,0 +1,5 @@
+Galmuri11 (galmuri) pixel/bitmap font
+Author: Heeju Jang (quiple) — https://galmuri.quiple.dev/
+Source: https://github.com/quiple/galmuri
+License: SIL Open Font License 1.1 (OFL) — free for commercial use.
+Keep the OFL license text with this font when redistributing.

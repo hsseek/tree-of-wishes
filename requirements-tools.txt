@@ -1,0 +1,6 @@
+# Optional tooling — NOT needed to run the web app.
+# Used by scripts/video_anim.py (Instagram reel generator) + the wish-reel skill.
+#   pip install -r requirements-tools.txt
+# (also needs system ffmpeg; wishes are fetched over HTTP, no DB required)
+pillow>=11.0
+numpy>=2.0
