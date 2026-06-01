@@ -28,10 +28,11 @@ def _today():
     return datetime.utcnow().date()
 
 
-def record_visit(visitor_key: str, registered: bool) -> None:
+def record_visit(visitor_key: str, registered: bool, source: str | None = None) -> None:
     """Record at most one visit per visitor per day. The in-process cache skips
     the DB write for repeat loads; the unique constraint is the source of truth
-    across restarts and concurrent workers."""
+    across restarts and concurrent workers. ``source`` (from the landing ?src=)
+    is captured on the day's first visit only — first-touch attribution."""
     today = _today()
     global _seen_day, _seen_keys
     with _lock:
@@ -43,7 +44,9 @@ def record_visit(visitor_key: str, registered: bool) -> None:
 
     db = SessionLocal()
     try:
-        db.add(DailyVisit(day=today, visitor_key=visitor_key, registered=registered))
+        db.add(DailyVisit(
+            day=today, visitor_key=visitor_key, registered=registered, source=source,
+        ))
         db.commit()
     except IntegrityError:
         db.rollback()  # already recorded (race or stale cache after restart)

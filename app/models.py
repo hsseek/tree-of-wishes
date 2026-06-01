@@ -123,6 +123,9 @@ class DailyVisit(Base):
     day = Column(Date, nullable=False)
     visitor_key = Column(String, nullable=False)
     registered = Column(Boolean, nullable=False, default=False)
+    # Referral source from the landing URL's ?src= on the day's first visit
+    # (first-touch attribution per visitor per day); NULL means direct/unknown.
+    source = Column(String, nullable=True)
 
     __table_args__ = (
         UniqueConstraint("day", "visitor_key", name="uq_daily_visit"),

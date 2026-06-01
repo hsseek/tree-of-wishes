@@ -252,6 +252,19 @@ def admin_analytics_page(
     )
     new_wishes = {str(d): n for d, n in wish_rows}
 
+    # Referral-source breakdown over the range (first-touch per visitor/day).
+    # NULL source = direct/unknown.
+    src_rows = (
+        db.query(DailyVisit.source, func.count().label("n"))
+        .filter(DailyVisit.day >= start_day)
+        .group_by(DailyVisit.source)
+        .all()
+    )
+    src_totals = {}
+    for s, n in src_rows:
+        src_totals[s or "direct"] = src_totals.get(s or "direct", 0) + n
+    sources = sorted(src_totals.items(), key=lambda kv: kv[1], reverse=True)
+
     # Average time-on-page per day from the daily rollup.
     dwell_rows = (
         db.query(DailyDwell).filter(DailyDwell.day >= start_day).all()
@@ -287,7 +300,8 @@ def admin_analytics_page(
         })
 
     ctx = _base_ctx(request, current_user)
-    ctx.update({"active_page": "admin", "rows": rows, "totals": totals, "days": days})
+    ctx.update({"active_page": "admin", "rows": rows, "totals": totals,
+                "days": days, "sources": sources})
     return templates.TemplateResponse("admin_analytics.html", ctx)
 
 

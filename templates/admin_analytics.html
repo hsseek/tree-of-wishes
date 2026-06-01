@@ -16,6 +16,23 @@
       <strong>{{ totals.new_wishes }}</strong> new wishes.
     </p>
 
+    {% if sources %}
+    <div class="source-breakdown">
+      <h2 class="source-title">Traffic sources <span class="source-sub">(last {{ days }} days)</span></h2>
+      <table class="source-table">
+        <tbody>
+          {% for name, count in sources %}
+          <tr>
+            <td class="src-name">{{ name }}</td>
+            <td class="src-count">{{ count }}</td>
+            <td class="src-pct">{{ (count * 100 // totals.visits) if totals.visits else 0 }}%</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+
     <div class="analytics-table-wrap">
     <table class="analytics-table">
       <thead>
@@ -66,6 +83,15 @@
   .analytics-table th:first-child, .analytics-table td:first-child { text-align: left; }
   .analytics-table thead th { font-weight: 600; opacity: 0.8; }
   .analytics-table tbody tr:hover { background: rgba(255,255,255,0.05); }
+
+  .source-breakdown { margin-bottom: 1.75rem; }
+  .source-title { font-size: 1rem; font-weight: 600; opacity: 0.85; margin-bottom: 0.5rem; }
+  .source-sub { font-weight: 400; opacity: 0.6; }
+  .source-table { border-collapse: collapse; font-variant-numeric: tabular-nums; min-width: 260px; }
+  .source-table td { padding: 0.35rem 1.25rem 0.35rem 0; border-bottom: 1px solid rgba(255,255,255,0.1); }
+  .source-table .src-name { text-transform: uppercase; letter-spacing: 0.04em; opacity: 0.9; }
+  .source-table .src-count { text-align: right; font-weight: 600; }
+  .source-table .src-pct { text-align: right; opacity: 0.6; }
 </style>
 {% endblock %}
 

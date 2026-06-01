@@ -21,6 +21,14 @@ run_migrations()
 _VID_MAX_AGE = 365 * 24 * 60 * 60
 
 
+def _clean_source(raw: str | None) -> str | None:
+    """Normalise a ?src= value to a short, safe tag (e.g. 'ig'); None if absent."""
+    if not raw:
+        return None
+    tag = "".join(c for c in raw.lower() if c.isalnum() or c in "-_")[:20]
+    return tag or None
+
+
 async def track_visit(request: Request, call_next):
     response = await call_next(request)
     try:
@@ -34,7 +42,7 @@ async def track_visit(request: Request, call_next):
                 if not vid:
                     vid = new_vid = uuid4().hex
                 visitor_key, registered = f"a{vid}", False
-            record_visit(visitor_key, registered)
+            record_visit(visitor_key, registered, _clean_source(request.query_params.get("src")))
             if new_vid:
                 response.set_cookie(
                     "tow_vid", new_vid, max_age=_VID_MAX_AGE,
