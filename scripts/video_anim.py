@@ -166,6 +166,171 @@ def fetch_board_wishes(board, base_url, n):
         return []
 
 
+# ── ambient effects ─────────────────────────────────────────────────────────
+# Each effect is a closure apply(img, t) composited onto the 1080xH frame.
+# Coordinates in the --fx spec are fractions 0..1 of the frame (so they survive
+# any image size). In the wish-reel skill, Claude looks at the image and places
+# these on the right spots (train on a track line, shimmer on water, wiggle on a
+# cat tail / foliage, flicker/twinkle on windows or neon, rain/snow full-frame).
+
+def _f(p, k, d):
+    try:
+        return float(p[k])
+    except (KeyError, ValueError, TypeError):
+        return d
+
+
+def _region(p, dx, dy, dw, dh):
+    x0 = int(_f(p, "x", dx) * W); y0 = int(_f(p, "y", dy) * H)
+    x1 = x0 + int(_f(p, "w", dw) * W); y1 = y0 + int(_f(p, "h", dh) * H)
+    return max(0, x0), max(0, y0), min(W, x1), min(H, y1)
+
+
+def fx_rain(p):
+    n = int(_f(p, "intensity", 0.5) * 240) + 50
+    dxr = math.tan(math.radians(_f(p, "angle", 12)))
+    xs = rng.uniform(0, W, n); ys = rng.uniform(0, H, n)
+    ln = rng.integers(10, 26, n); spd = rng.uniform(1.0, 1.7, n)
+    a = _f(p, "alpha", 0.20); col = np.array([205, 214, 235.])
+
+    def ap(img, t):
+        yy = (ys + t * spd * H * 1.25) % (H + 40)
+        for i in range(n):
+            x = xs[i]; y = int(yy[i]); L = int(ln[i])
+            for k in range(L):
+                py = y - k; px = int(x - k * dxr)
+                if 0 <= py < H and 0 <= px < W:
+                    img[py, px] = np.minimum(255, img[py, px] + col * a * (1 - k / L))
+    return ap
+
+
+def fx_snow(p):
+    n = int(_f(p, "intensity", 0.5) * 180) + 40
+    xs = rng.uniform(0, W, n); ys = rng.uniform(0, H, n)
+    spd = rng.uniform(0.18, 0.5, n); sway = rng.uniform(8, 26, n)
+    ph = rng.uniform(0, 6.28, n); sz = rng.integers(2, 5, n)
+
+    def ap(img, t):
+        for i in range(n):
+            y = (ys[i] + t * spd[i] * H) % (H + 20)
+            x = xs[i] + sway[i] * math.sin(0.5 * t + ph[i])
+            xi, yi, s = int(x), int(y), int(sz[i])
+            if 0 <= xi < W - s and 0 <= yi < H - s:
+                img[yi:yi + s, xi:xi + s] = np.minimum(
+                    255, img[yi:yi + s, xi:xi + s] + np.array([235, 240, 250.]) * 0.85)
+    return ap
+
+
+def fx_train(p):
+    yc = _f(p, "y", 0.5) * H; h = max(6, int(_f(p, "h", 0.05) * H))
+    period = _f(p, "period", 16); dur = _f(p, "dur", 3.5)
+    right = p.get("dir", "right") != "left"; L = int(_f(p, "len", 0.55) * W)
+    y0 = max(0, int(yc - h / 2)); y1 = min(H, y0 + h)
+    body = np.array([20, 18, 28.]); roof = np.array([46, 42, 60.]); win = np.array([255, 206, 120.])
+
+    def ap(img, t):
+        ph = t % period
+        if ph > dur:
+            return
+        prog = ph / dur
+        hx = int(-L + prog * (W + L)) if right else int(W - prog * (W + L))
+        x0, x1 = max(0, hx), min(W, hx + L)
+        if x0 >= x1:
+            return
+        img[y0:y1, x0:x1] = body
+        img[y0:y0 + max(1, int(h * 0.16)), x0:x1] = roof
+        ww = max(3, int(h * 0.30)); gap = max(4, int(h * 0.55)); wy = y0 + int(h * 0.32)
+        wx = hx + gap
+        while wx < hx + L - ww:
+            ax0, ax1 = max(0, wx), min(W, wx + ww)
+            if ax0 < ax1:
+                img[wy:wy + ww, ax0:ax1] = win
+            wx += gap + ww
+    return ap
+
+
+def fx_flicker(p):
+    x0, y0, x1, y1 = _region(p, 0.6, 0.4, 0.06, 0.08)
+    period = _f(p, "period", 3); amp = _f(p, "amp", 0.22)
+
+    def ap(img, t):
+        fac = 1 + amp * (0.5 * math.sin(2 * math.pi * t / period) + 0.5 * math.sin(11.0 * t + 1.3))
+        img[y0:y1, x0:x1] = np.clip(img[y0:y1, x0:x1] * fac, 0, 255)
+    return ap
+
+
+def fx_twinkle(p):
+    x0, y0, x1, y1 = _region(p, 0.1, 0.2, 0.8, 0.3)
+    rw, rh = max(1, x1 - x0), max(1, y1 - y0)
+    n = int(_f(p, "density", 0.4) * 40) + 6
+    px = rng.integers(0, rw, n); py = rng.integers(0, rh, n)
+    ph = rng.uniform(0, 6.28, n); fr = rng.uniform(0.3, 1.2, n)
+    col = np.array([255, 225, 150.])
+
+    def ap(img, t):
+        for i in range(n):
+            b = 0.5 + 0.5 * math.sin(2 * math.pi * fr[i] * t + ph[i])
+            if b > 0.55:
+                img[y0 + int(py[i]), x0 + int(px[i])] = np.minimum(
+                    255, img[y0 + int(py[i]), x0 + int(px[i])] + col * (b - 0.5) * 2 * 0.85)
+    return ap
+
+
+def fx_shimmer(p):
+    yc = _f(p, "y", 0.82); hh = _f(p, "h", 0.16)
+    y0 = max(0, int((yc - hh / 2) * H)); y1 = min(H, int((yc + hh / 2) * H))
+    amp = _f(p, "amp", 2.0); speed = _f(p, "speed", 0.3)
+    rows = max(1, y1 - y0); rf = np.arange(rows); cols = np.arange(W)
+
+    def ap(img, t):
+        s = amp * np.sin(2 * math.pi * speed * t + rf * 0.35)
+        idx = ((cols[None, :] - s[:, None]).round().astype(int)) % W
+        img[y0:y1] = img[y0:y1][np.arange(rows)[:, None], idx]
+    return ap
+
+
+def fx_wiggle(p):
+    x0, y0, x1, y1 = _region(p, 0.2, 0.7, 0.06, 0.06)
+    period = _f(p, "period", 5); dur = _f(p, "dur", 1.6); amp = _f(p, "amp", 2.5)
+    rows = max(1, y1 - y0); rf = np.linspace(0, 1, rows)
+
+    def ap(img, t):
+        ph = t % period
+        if ph > dur:
+            return
+        env = math.sin(math.pi * ph / dur)
+        s = (amp * env * math.sin(2 * math.pi * 2 * ph / dur)) * rf
+        reg = img[y0:y1, x0:x1]; w = reg.shape[1]
+        if w == 0:
+            return
+        idx = ((np.arange(w)[None, :] - s[:, None]).round().astype(int)) % w
+        img[y0:y1, x0:x1] = reg[np.arange(rows)[:, None], idx]
+    return ap
+
+
+def fx_drift(p):
+    yc = _f(p, "y", 0.22); hh = _f(p, "h", 0.28)
+    y0 = max(0, int((yc - hh / 2) * H)); y1 = min(H, int((yc + hh / 2) * H))
+    speed = _f(p, "speed", 5.0)   # px/sec; best on a fairly uniform sky/cloud band
+
+    def ap(img, t):
+        img[y0:y1] = np.roll(img[y0:y1], int(t * speed) % W, axis=1)
+    return ap
+
+
+_FX = {"rain": fx_rain, "snow": fx_snow, "train": fx_train, "flicker": fx_flicker,
+       "twinkle": fx_twinkle, "shimmer": fx_shimmer, "wiggle": fx_wiggle, "drift": fx_drift}
+
+
+def compile_fx(spec):
+    typ, _, rest = spec.partition(":")
+    p = dict(kv.split("=", 1) for kv in rest.split(",") if "=" in kv) if rest else {}
+    if typ not in _FX:
+        print(f"  ⚠ unknown effect '{typ}' (have: {', '.join(_FX)})")
+        return None
+    return _FX[typ](p)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--image", required=True)
@@ -178,6 +343,10 @@ def main():
     ap.add_argument("--out", default=str(ROOT / "instagram_videos" / "anim.mp4"))
     ap.add_argument("--base-url", default=os.getenv("TOW_BASE_URL", "https://tree-of-wishes.fyi"),
                     help="Tree of Wishes API base (default tree-of-wishes.fyi or $TOW_BASE_URL)")
+    ap.add_argument("--fx", action="append", default=[],
+                    help="ambient effect (repeatable), e.g. rain:intensity=0.5 | "
+                         "train:y=0.62,dir=left,period=12 | shimmer:y=0.85 | "
+                         "wiggle:x=0.2,y=0.7,w=0.05,h=0.05 | flicker:x=0.7,y=0.4")
     args = ap.parse_args()
     base_url = args.base_url.rstrip("/")
 
@@ -219,6 +388,7 @@ def main():
     n = int(args.seconds * FPS)
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
+    effects = [f for f in (compile_fx(s) for s in args.fx) if f]
     print(f"Rendering {args.seconds:.0f}s [{mood}] from {Path(args.image).name}…")
     proc = subprocess.Popen(
         ["ffmpeg", "-y", "-f", "rawvideo", "-pix_fmt", "rgb24",
@@ -232,6 +402,8 @@ def main():
         off = pan_start + int(pan_span * u)
         ox, oy = (off, py // 2) if horizontal else (px // 2, off)
         img = big[oy:oy + H, ox:ox + W].copy()
+        for fx in effects:                     # scene ambient animations
+            fx(img, t)
         if mood == "columbarium":              # cool motes drifting slowly down
             for x0, y0, spd, ph, amp in particles:
                 yy = (y0 + t * spd * H) % (H + 60) - 30
