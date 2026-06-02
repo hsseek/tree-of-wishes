@@ -11,3 +11,6 @@ venv/
 
 # Generated Instagram reels (user art + wishes — regenerate, do not commit)
 instagram_videos/
+
+# Rendered share-card cache (regenerated on demand)
+cache/
