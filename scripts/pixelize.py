@@ -16,9 +16,23 @@ import argparse
 from pathlib import Path
 
 import numpy as np
-from PIL import Image, ImageEnhance
+from PIL import Image, ImageEnhance, ImageFilter
 
 OUT_W = 1080   # crisp upscale width fed to the reel renderer
+
+
+def dewatermark(img: Image.Image) -> Image.Image:
+    """Suppress faint, tiled/translucent stock watermarks before downscaling.
+
+    A median filter (sized to the image) breaks up the thin watermark strokes;
+    the later area-average downscale then blends what's left into the background,
+    so by pixel-art resolution the mark is gone. This handles the common 'stock
+    preview' watermark (e.g. tiled 'dreamstime.com' text). It will NOT cleanly
+    erase a large opaque logo — and it is NOT a usage license for the image.
+    """
+    img = img.convert("RGB")
+    size = min(9, max(3, round(img.size[0] / 300) | 1))   # odd, grows with width
+    return img.filter(ImageFilter.MedianFilter(size))
 
 
 def grade(img: Image.Image, mode: str) -> Image.Image:
@@ -38,8 +52,11 @@ def grade(img: Image.Image, mode: str) -> Image.Image:
     return Image.fromarray(np.clip(arr, 0, 255).astype("uint8"))
 
 
-def pixelize(img: Image.Image, pixels: int, colors: int, dither: bool, grade_mode: str) -> Image.Image:
+def pixelize(img: Image.Image, pixels: int, colors: int, dither: bool, grade_mode: str,
+             dewater: bool = True) -> Image.Image:
     img = img.convert("RGB")
+    if dewater:                                                 # strip stock watermarks first
+        img = dewatermark(img)
     w, h = img.size
     sw = max(8, pixels)
     sh = max(8, round(h * sw / w))
@@ -53,7 +70,7 @@ def pixelize(img: Image.Image, pixels: int, colors: int, dither: bool, grade_mod
 
 # name, pixels, colors, dither, grade
 SWEEP = [
-    ("fine-neutral",  256, 64, False, "none"),
+    ("chunky-warm",   144, 40, False, "warm"),
     ("med-neutral",   192, 48, False, "none"),
     ("chunky-muted",  144, 32, True,  "muted"),
     ("med-warm",      192, 48, False, "warm"),
@@ -70,6 +87,9 @@ def main():
     ap.add_argument("--colors", type=int, default=48)
     ap.add_argument("--dither", action="store_true")
     ap.add_argument("--grade", choices=["none", "warm", "cool", "muted"], default="none")
+    ap.add_argument("--dewatermark", action=argparse.BooleanOptionalAction, default=True,
+                    help="suppress faint stock watermarks before pixelizing (default on; "
+                         "--no-dewatermark to skip on already-clean art)")
     args = ap.parse_args()
 
     src = Image.open(args.image)
@@ -84,9 +104,9 @@ def main():
 
     for i, (name, px, cols, dith, gr) in enumerate(jobs, 1):
         out = out_dir / f"px_{stem}_c{i}_{name}.png"
-        pixelize(src, px, cols, dith, gr).save(out)
+        pixelize(src, px, cols, dith, gr, dewater=args.dewatermark).save(out)
         print(f"  c{i}: {out.name}  ({px}px, {cols} colors, dither={dith}, grade={gr})")
-    print(f"\n{len(jobs)} candidate(s) → {out_dir}")
+    print(f"\n{len(jobs)} candidate(s) → {out_dir}  (dewatermark={args.dewatermark})")
 
 
 if __name__ == "__main__":

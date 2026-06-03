@@ -11,16 +11,19 @@ image tool (e.g. Nano Banana / Midjourney) — Claude only supplies prompts.
 the chosen pixel image + wishes into a Reel). See `memory/project_instagram_reel_tool.md`.
 
 ## What it does
-Downscale → palette-quantize (optional dither) → color-grade → crisp nearest
-upscale (1080px wide). Emits a **sweep of candidates** so the user picks the best.
+(Auto watermark-suppression) → downscale → palette-quantize (optional dither) →
+color-grade → crisp nearest upscale (1080px wide). Emits a **sweep of candidates**
+so the user picks the best.
 
 ## Steps
 1. **Generate candidates** (needs `pip install -r requirements-tools.txt` once):
    ```bash
    .venv/bin/python scripts/pixelize.py --image "SOURCE.png" --out-dir instagram_videos/pixelized
    ```
-   Default = a 5-candidate sweep: `c1 fine-neutral`, `c2 med-neutral`,
+   Default = a 5-candidate sweep: `c1 chunky-warm`, `c2 med-neutral`,
    `c3 chunky-muted` (dither), `c4 med-warm`, `c5 med-cool`.
+   Watermark suppression is **on by default** (`--no-dewatermark` to skip on
+   already-clean art) — see the watermark note below.
 2. **Show the candidates** to the user and let them pick one (or ask for another
    sweep with tweaked settings).
 3. **Iterate** a specific look if asked:
@@ -33,6 +36,17 @@ upscale (1080px wide). Emits a **sweep of candidates** so the user picks the bes
    - `--grade warm` (heart-warming / tree) · `cool` (wistful / columbarium) ·
      `muted` (dusty lofi) · `none`.
 4. **Hand off** the chosen file to `wish-reel` (Task 3).
+
+## Watermark removal (on by default)
+A pre-pass (`dewatermark()` in `scripts/pixelize.py`) suppresses faint, tiled or
+translucent **stock-preview watermarks** (e.g. `dreamstime.com` text): a
+size-scaled median filter breaks up the thin strokes, then the heavy downscale
+blends the rest into the background, so by pixel-art resolution the mark is gone.
+- It will **not** cleanly erase a large opaque logo, and it lightly softens fine
+  detail (harmless here — the output is downsampled pixel art anyway).
+- **It is NOT a license.** Removing a watermark does not grant rights to use the
+  image. For a commercial post, license the art (or use art you own). Always warn
+  the user when the source looks like a watermarked stock preview.
 
 ## Notes
 - Works best on clean source art with good contrast and a clear focal scene.

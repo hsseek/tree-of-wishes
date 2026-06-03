@@ -318,8 +318,83 @@ def fx_drift(p):
     return ap
 
 
+def fx_string(p):
+    # String/fairy lights that flicker in ALTERNATING fashion: the actual bright
+    # bulbs in the region are found once, split into spatial bands, and adjacent
+    # bands pulse in antiphase (band A up while band B down). Only real bulb
+    # pixels are modulated, so the glow stays on the lights — not the glass/wall.
+    x0, y0, x1, y1 = _region(p, 0.30, 0.0, 0.65, 0.10)
+    period = _f(p, "period", 1.4); amp = _f(p, "amp", 0.55)
+    thr = _f(p, "thr", 210); band = max(2, int(_f(p, "band", 0.02) * W))
+    st = {}
+
+    def ap(img, t):
+        reg = img[y0:y1, x0:x1]
+        if "grp" not in st:                       # detect bulbs on the base frame
+            ys, xs = np.where(reg.mean(axis=2) > thr)
+            st["ys"], st["xs"] = ys, xs
+            st["grp"] = ((xs // band) % 2).astype(bool)
+        ys, xs, grp = st["ys"], st["xs"], st["grp"]
+        if len(xs) == 0:
+            return
+        ph = math.sin(2 * math.pi * t / period)
+        fac = np.where(grp, 1 + amp * ph, 1 - amp * ph)   # antiphase bands
+        reg[ys, xs] = np.clip(reg[ys, xs] * fac[:, None], 0, 255)
+    return ap
+
+
+def fx_steam(p):
+    # Steam rising from a hot cup. Physics: wisps travel UP from the rim, spread
+    # laterally and grow as they rise (diffusion), and fade to nothing near the
+    # top (dissipation). `speed` controls how fast they rise. The region's BOTTOM
+    # edge (y+h) is the rim; steam never moves downward.
+    x0, y0, x1, y1 = _region(p, 0.59, 0.55, 0.10, 0.17)
+    rw, rh = max(1, x1 - x0), max(1, y1 - y0)
+    n = int(_f(p, "intensity", 0.5) * 22) + 8
+    speed = _f(p, "speed", 1.2)          # higher = rises faster
+    a = _f(p, "alpha", 0.12); sway = _f(p, "sway", 0.6)
+    base = rng.uniform(0.30, 0.70, n)    # emit near the cup centre
+    ph = rng.uniform(0, 6.28, n); spd = rng.uniform(0.85, 1.25, n)
+    col = np.array([248, 244, 238.])
+
+    def ap(img, t):
+        for i in range(n):
+            prog = (t * speed * spd[i] + ph[i]) % 1.0      # 0 at rim → 1 at top
+            yy = int(y1 - prog * rh)                        # rise upward
+            spread = sway * rw * 0.5 * prog                 # widen with height
+            xx = int(x0 + base[i] * rw + spread * math.sin(3.0 * t + ph[i] * 4))
+            fade = math.sin(math.pi * prog) ** 1.2          # fade in/out
+            s = 2 + int(prog * 3)                           # wisp grows as it rises
+            if 0 <= xx < W - s and 0 <= yy < H - s:
+                img[yy:yy + s, xx:xx + s] = np.minimum(
+                    255, img[yy:yy + s, xx:xx + s] + col * a * fade)
+    return ap
+
+
+def fx_swing(p):
+    # Continuous pendulum swing for a hanging/draped tail. Unlike `wiggle` (a
+    # brief occasional sway), this never stops. The pivot end is fixed and the
+    # free end sweeps most. For a roughly horizontal tail the sweep is vertical
+    # (tip rises/falls); `pivot=left|right` sets which end is anchored.
+    x0, y0, x1, y1 = _region(p, 0.02, 0.635, 0.15, 0.04)
+    period = _f(p, "period", 2.2); amp = _f(p, "amp", 5.0)
+    cols = max(1, x1 - x0); rows = max(1, y1 - y0)
+    cf = np.linspace(0, 1, cols)
+    amt = cf if p.get("pivot", "left") == "left" else cf[::-1]
+
+    def ap(img, t):
+        s = amp * math.sin(2 * math.pi * t / period) * amt   # vertical shift/col
+        reg = img[y0:y1, x0:x1]; h = reg.shape[0]
+        if h == 0:
+            return
+        idx = ((np.arange(h)[:, None] - s[None, :]).round().astype(int)) % h
+        img[y0:y1, x0:x1] = reg[idx, np.arange(cols)[None, :]]
+    return ap
+
+
 _FX = {"rain": fx_rain, "snow": fx_snow, "train": fx_train, "flicker": fx_flicker,
-       "twinkle": fx_twinkle, "shimmer": fx_shimmer, "wiggle": fx_wiggle, "drift": fx_drift}
+       "twinkle": fx_twinkle, "shimmer": fx_shimmer, "wiggle": fx_wiggle, "drift": fx_drift,
+       "string": fx_string, "steam": fx_steam, "swing": fx_swing}
 
 
 def compile_fx(spec):
@@ -339,7 +414,19 @@ def main():
                     help="mood; 'auto' infers it from the wishes' board")
     ap.add_argument("--focus", type=float, default=0.5,
                     help="0..1 anchor along the pan axis — aim the crop at the subject")
-    ap.add_argument("--seconds", type=float, default=12.0)
+    ap.add_argument("--seconds", type=float, default=None,
+                    help="total length. Default: dynamic — the sum of each wish's "
+                         "reading time (longer messages stay up longer). If set, "
+                         "that fixed budget is split across wishes in proportion "
+                         "to their length.")
+    ap.add_argument("--cps", type=float, default=6.0,
+                    help="reading speed (chars/sec) driving per-wish on-screen time")
+    ap.add_argument("--min-hold", type=float, default=2.2,
+                    help="floor for how long a wish stays fully visible (s)")
+    ap.add_argument("--max-hold", type=float, default=10.0,
+                    help="cap for how long a wish stays fully visible (s)")
+    ap.add_argument("--no-pan", action="store_true",
+                    help="static centered crop — disable the Ken-Burns pan")
     ap.add_argument("--out", default=str(ROOT / "instagram_videos" / "anim.mp4"))
     ap.add_argument("--base-url", default=os.getenv("TOW_BASE_URL", "https://tree-of-wishes.fyi"),
                     help="Tree of Wishes API base (default tree-of-wishes.fyi or $TOW_BASE_URL)")
@@ -381,15 +468,34 @@ def main():
     px, py = BW - W, BH - H
     horizontal = px >= py                       # pan along the longer axis
     avail = px if horizontal else py
-    pan_span = min(avail, int(PAN_FRAC * (W if horizontal else H)))
+    pan_span = 0 if args.no_pan else min(avail, int(PAN_FRAC * (W if horizontal else H)))
     pan_start = max(0, min(avail - pan_span, int(args.focus * avail) - pan_span // 2))
 
-    per = args.seconds / len(wishes)
-    n = int(args.seconds * FPS)
+    # Per-wish on-screen time scales with message length so long wishes stay
+    # readable. Default total = sum of these reading times; with --seconds, a
+    # fixed budget is split across wishes in proportion to their length.
+    FADE, LEAD = 0.6, 0.6
+    texts = [" ".join((w.get("text") or "").split()) for w in wishes]
+    raw = [min(args.max_hold, max(args.min_hold, len(tx) / args.cps)) for tx in texts]
+    if args.seconds:
+        budget = max(0.5, args.seconds - len(wishes) * (LEAD + 2 * FADE))
+        ssum = sum(raw) or 1.0
+        holds = [budget * r / ssum for r in raw]
+    else:
+        holds = raw
+    starts, cur = [], 0.0
+    for h in holds:
+        cur += LEAD
+        starts.append(cur)
+        cur += FADE + h + FADE
+    total = cur
+    n = int(total * FPS)
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     effects = [f for f in (compile_fx(s) for s in args.fx) if f]
-    print(f"Rendering {args.seconds:.0f}s [{mood}] from {Path(args.image).name}…")
+    print(f"Rendering {total:.1f}s [{mood}] from {Path(args.image).name} "
+          f"({len(wishes)} wishes @ {args.cps:g} cps, holds "
+          f"{', '.join(f'{h:.1f}' for h in holds)}s)…")
     proc = subprocess.Popen(
         ["ffmpeg", "-y", "-f", "rawvideo", "-pix_fmt", "rgb24",
          "-s", f"{W}x{H}", "-r", str(FPS), "-i", "-",
@@ -419,15 +525,15 @@ def main():
         img = img * VIGNETTE * (1 + 0.02 * math.sin(0.6 * t))   # vignette + breath
         img = img + rng.normal(0, 4.0, (H, W, 1))               # film grain
         scene = Image.fromarray(np.clip(img, 0, 255).astype(np.uint8)).convert("RGBA")
-        for i, wsh in enumerate(wishes):
-            a = text_alpha(t, start=i * per + 0.7, hold=per - 2.2)
+        for i in range(len(wishes)):
+            a = text_alpha(t, start=starts[i], hold=holds[i], fade=FADE)
             if a > 0:
-                draw_text(scene, " ".join((wsh.get("text") or "").split()), a)
+                draw_text(scene, texts[i], a)
         proc.stdin.write(np.ascontiguousarray(
             np.asarray(scene.convert("RGB"), dtype=np.uint8)).tobytes())
     proc.stdin.close()
     proc.wait()
-    print(f"→ {out}")
+    print(f"→ {out}  ({total:.1f}s)")
 
 
 if __name__ == "__main__":
