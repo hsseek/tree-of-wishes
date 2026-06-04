@@ -45,6 +45,9 @@
   "about.legend.columbariumTitle": "봉안당",
   "about.legend.niche": "이루어지지 않은 소원 — ✿ 는 헌화 수",
   "about.legend.nichePopular": "많은 헌화를 받은 소원",
+  "about.shortcuts.title": "단축키",
+  "about.shortcuts.intro": "컴퓨터에서는 텍스트 입력 중이 아닐 때 ? 를 누르면 단축키 안내를 열 수 있습니다. 사용 가능한 키:",
+  "about.shortcuts.touch": "휴대폰에서는 소원 화면 위쪽의 화살표 버튼으로 소원 사이를 이동할 수 있습니다.",
 
   "myWishes.title": "내 소원",
   "myWishes.loginNotice": "로그인하면 내 소원을 확인하고 관리할 수 있습니다. 로그인한 사용자는 비밀번호 없이 소원을 수정, 이루었음 표시, 삭제할 수 있습니다.",

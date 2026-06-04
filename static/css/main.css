@@ -614,6 +614,17 @@ body.season-winter .ff-popular .ff-glyph {
 }
 .modal-close:hover { background: rgba(0,0,0,0.1); color: var(--text); }
 
+/* Tap-friendly navigation (older / younger / random) for keyboard-less use. */
+.modal-nav { display: flex; gap: 4px; }
+.modal-nav-btn {
+  background: none; border: 1px solid var(--border); color: var(--text-muted);
+  font-size: 15px; line-height: 1; cursor: pointer;
+  width: 30px; height: 30px; border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+}
+.modal-nav-btn:hover:not(:disabled) { background: rgba(0,0,0,0.1); color: var(--text); }
+.modal-nav-btn:disabled { opacity: 0.3; cursor: default; }
+
 .modal-body { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
 
 .modal-status {
@@ -824,6 +835,8 @@ body.season-winter .ff-popular .ff-glyph {
 .legend-divider { border: none; border-top: 1px solid var(--border); margin: 22px 0 18px; }
 .legend-title { font-size: 11px; font-weight: bold; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 14px; }
 .legend-section-title { font-size: 10px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; color: var(--text-muted); opacity: 0.65; margin: 14px 0 8px; }
+.about-shortcuts-intro { font-size: 13px; color: var(--text-muted); margin: 0 0 14px; }
+.about-shortcuts { margin-bottom: 6px; }
 .legend-items { display: flex; flex-direction: column; gap: 9px; }
 .legend-item { display: flex; align-items: center; gap: 12px; font-size: 13px; line-height: 1.4; color: var(--text-muted); }
 

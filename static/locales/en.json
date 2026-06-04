@@ -45,6 +45,9 @@
   "about.legend.columbariumTitle": "Columbarium",
   "about.legend.niche": "Unfulfilled wish — ✿ shows flower offerings",
   "about.legend.nichePopular": "Many flowers offered",
+  "about.shortcuts.title": "Keyboard shortcuts",
+  "about.shortcuts.intro": "On a computer, press the ? key anytime to open the shortcut guide. The available keys:",
+  "about.shortcuts.touch": "On a phone, use the arrow buttons at the top of an open wish to move between wishes.",
 
   "myWishes.title": "My Wishes",
   "myWishes.loginNotice": "Sign in with Google to view and manage your wishes. Signed-in users can edit, fulfill, or delete their wishes without a password.",

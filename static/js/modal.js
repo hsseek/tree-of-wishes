@@ -13,6 +13,18 @@ class WishModal {
     this.el.querySelector('.modal-close').addEventListener('click', () => this.close());
     this.backdrop.addEventListener('click', () => this.close());
     document.addEventListener('keydown', e => { if (e.key === 'Escape') this.close(); });
+
+    // On-screen navigation mirrors the j/k/r keyboard shortcuts for touch users.
+    // Left = previous (j, older); right = next (k, younger).
+    this._navPrev = document.getElementById('modal-nav-prev');
+    this._navNext = document.getElementById('modal-nav-next');
+    const navRandom = document.getElementById('modal-nav-random');
+    this._navPrev?.addEventListener('click', () => this.navigate('older'));
+    this._navNext?.addEventListener('click', () => this.navigate('younger'));
+    navRandom?.addEventListener('click', () => this.random());
+    if (this._navPrev) this._navPrev.title = `${i18n.t('shortcuts.older')} (j)`;
+    if (this._navNext) this._navNext.title = `${i18n.t('shortcuts.younger')} (k)`;
+    if (navRandom) navRandom.title = `${i18n.t('shortcuts.random')} (r)`;
   }
 
   async open(wish) {
@@ -25,6 +37,7 @@ class WishModal {
 
     fetch(`/api/wishes/${wish.id}/view`, { method: 'POST' });
     this._renderMain(wish);
+    this._updateNav(wish);
     this.el.classList.add('open');
     this.backdrop.classList.add('open');
 
@@ -50,9 +63,7 @@ class WishModal {
    */
   navigate(direction) {
     if (!this.isOpen || !this._currentWish) return;
-    const list = (window.wishGrid?.wishes || [])
-      .filter(w => w.created_at)
-      .sort((a, b) => _ts(b.created_at) - _ts(a.created_at)); // youngest → oldest
+    const list = this._orderedWishes();
     if (list.length < 2) return;
 
     let idx = list.findIndex(w => w.id === this._currentWish.id);
@@ -60,6 +71,31 @@ class WishModal {
     idx += (direction === 'older' ? 1 : -1);
     if (idx < 0 || idx >= list.length) return; // stop at the ends
     this.open(list[idx]);
+  }
+
+  /** Open a random wish from the current board (mirrors the `r` shortcut). */
+  random() {
+    const list = window.wishGrid?.wishes || [];
+    if (!list.length) return;
+    this.open(list[Math.floor(Math.random() * list.length)]);
+  }
+
+  /** Wishes ordered youngest → oldest, the order used for younger/older steps. */
+  _orderedWishes() {
+    return (window.wishGrid?.wishes || [])
+      .filter(w => w.created_at)
+      .sort((a, b) => _ts(b.created_at) - _ts(a.created_at));
+  }
+
+  /** Grey out prev/next at the ends of the list so the controls read true. */
+  _updateNav(wish) {
+    const list = this._orderedWishes();
+    const idx = list.findIndex(w => w.id === wish.id);
+    const atEnds = idx === -1 || list.length < 2;
+    // previous (j) steps older → off at the oldest end;
+    // next (k) steps younger → off at the newest end.
+    if (this._navPrev) this._navPrev.disabled = atEnds || idx === list.length - 1;
+    if (this._navNext) this._navNext.disabled = atEnds || idx === 0;
   }
 
   _renderMain(wish) {
