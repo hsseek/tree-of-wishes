@@ -37,6 +37,24 @@ so the user picks the best.
      `muted` (dusty lofi) · `none`.
 4. **Hand off** the chosen file to `wish-reel` (Task 3).
 
+## Pixelize a video (animated background for wish-reel)
+When the user supplies a **clip** (e.g. a Kling/Runway image-to-video animation of
+the scene — candle flicker, fire, page-turn), pixelize it frame-by-frame into a
+1080×1920 pixel-art mp4 to feed `wish-reel --bg-video`:
+```bash
+.venv/bin/python scripts/pixelize.py --video "CLIP.mp4" \
+  --out instagram_videos/pixelized/px_NAME.mp4
+# same look knobs as stills: --pixels (default 192) --colors (48) --grade --dither
+```
+- Uses **one shared palette** computed from sampled frames, so colors don't shimmer
+  frame-to-frame (per-frame quantization would flicker). Default look = the
+  `med-neutral` still preset (192px, 48 colors, no dither/grade); pass overrides to
+  match a still the user already picked.
+- Cover-crops to 9:16 and emits a **silent** mp4 (wish-reel adds the soundtrack).
+- Free image-to-video tools often **burn in a watermark** (e.g. Kling's corner
+  mark) that survives downscaling as a faint smudge — warn the user; it is not a
+  license, and they may want it cropped/covered before posting.
+
 ## Watermark removal (on by default)
 A pre-pass (`dewatermark()` in `scripts/pixelize.py`) suppresses faint, tiled or
 translucent **stock-preview watermarks** (e.g. `dreamstime.com` text): a

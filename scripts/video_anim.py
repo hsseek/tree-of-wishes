@@ -61,6 +61,35 @@ def load_cover(path):
     return np.asarray(im.resize((int(w * scale), int(h * scale)), Image.NEAREST), float)
 
 
+def load_bg_frames(path):
+    """Decode an animated background (already pixelized) into W×H uint8 frames.
+
+    Used by --bg-video: the moving pixel-art clip plays under the wishes instead
+    of a still. Forced to the frame size by ffmpeg's scaler. Returns a list the
+    renderer ping-pong loops to fill the (longer) wish duration."""
+    dec = subprocess.Popen(
+        ["ffmpeg", "-v", "error", "-i", str(path),
+         "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}", "-"],
+        stdout=subprocess.PIPE)
+    fsz, frames = W * H * 3, []
+    while True:
+        raw = dec.stdout.read(fsz)
+        if len(raw) < fsz:
+            break
+        frames.append(np.frombuffer(raw, np.uint8).reshape(H, W, 3).copy())
+    dec.stdout.close(); dec.wait()
+    return frames
+
+
+def pingpong(f, n):
+    """Seamless loop index: 0..n-1..1..(repeat) — no hard cut at the loop seam."""
+    if n <= 1:
+        return 0
+    period = 2 * n - 2
+    k = f % period
+    return k if k < n else period - k
+
+
 def add_glow(img, cx, cy, color, a):
     x0, y0 = cx - _R, cy - _R
     x1, y1 = cx + _R + 1, cy + _R + 1
@@ -420,7 +449,10 @@ def compile_fx(spec):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--image", required=True)
+    ap.add_argument("--image", help="still pixel-art background")
+    ap.add_argument("--bg-video", dest="bg_video",
+                    help="animated (already pixelized) background clip; ping-pong "
+                         "looped under the wishes instead of a still --image")
     ap.add_argument("--ids", nargs="*", type=int)
     ap.add_argument("--board", default="auto", choices=["auto", "tree", "columbarium"],
                     help="mood; 'auto' infers it from the wishes' board")
@@ -448,6 +480,8 @@ def main():
                          "wiggle:x=0.2,y=0.7,w=0.05,h=0.05 | flicker:x=0.7,y=0.4")
     args = ap.parse_args()
     base_url = args.base_url.rstrip("/")
+    if not (args.image or args.bg_video):
+        ap.error("pass --image (still) or --bg-video (animated clip)")
 
     # wishes from the live API — no local DB needed
     if args.ids:
@@ -475,13 +509,23 @@ def main():
         particles = [(rng.uniform(0, W), rng.uniform(0, H), rng.uniform(0.012, 0.04),
                       rng.uniform(0, 6.28), rng.uniform(0.5, 1.0)) for _ in range(9)]
 
-    big = load_cover(args.image)
-    BH, BW = big.shape[:2]
-    px, py = BW - W, BH - H
-    horizontal = px >= py                       # pan along the longer axis
-    avail = px if horizontal else py
-    pan_span = 0 if args.no_pan else min(avail, int(PAN_FRAC * (W if horizontal else H)))
-    pan_start = max(0, min(avail - pan_span, int(args.focus * avail) - pan_span // 2))
+    # Background: an animated pixel-art clip (--bg-video, ping-pong looped) or a
+    # still (--image, optional Ken-Burns pan). The clip already carries the motion,
+    # so it ignores pan/focus.
+    bg_frames = big = None
+    if args.bg_video:
+        bg_frames = load_bg_frames(args.bg_video)
+        if not bg_frames:
+            print("No frames decoded from --bg-video.")
+            return
+    else:
+        big = load_cover(args.image)
+        BH, BW = big.shape[:2]
+        px, py = BW - W, BH - H
+        horizontal = px >= py                   # pan along the longer axis
+        avail = px if horizontal else py
+        pan_span = 0 if args.no_pan else min(avail, int(PAN_FRAC * (W if horizontal else H)))
+        pan_start = max(0, min(avail - pan_span, int(args.focus * avail) - pan_span // 2))
 
     # Per-wish on-screen time scales with message length so long wishes stay
     # readable. Default total = sum of these reading times; with --seconds, a
@@ -506,7 +550,9 @@ def main():
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     effects = [f for f in (compile_fx(s) for s in args.fx) if f]
-    print(f"Rendering {total:.1f}s [{mood}] from {Path(args.image).name} "
+    src_name = Path(args.bg_video).name if bg_frames is not None else Path(args.image).name
+    bg_note = f" (bg {len(bg_frames)} frames, ping-pong)" if bg_frames is not None else ""
+    print(f"Rendering {total:.1f}s [{mood}] from {src_name}{bg_note} "
           f"({len(wishes)} wishes @ {args.cps:g} cps, holds "
           f"{', '.join(f'{h:.1f}' for h in holds)}s)…")
     proc = subprocess.Popen(
@@ -517,10 +563,13 @@ def main():
         stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     for f in range(n):
         t = f / FPS
-        u = ease(f / max(1, n - 1))
-        off = pan_start + int(pan_span * u)
-        ox, oy = (off, py // 2) if horizontal else (px // 2, off)
-        img = big[oy:oy + H, ox:ox + W].copy()
+        if bg_frames is not None:              # animated clip, ping-pong looped
+            img = bg_frames[pingpong(f, len(bg_frames))].astype(float)
+        else:                                  # still + optional Ken-Burns pan
+            u = ease(f / max(1, n - 1))
+            off = pan_start + int(pan_span * u)
+            ox, oy = (off, py // 2) if horizontal else (px // 2, off)
+            img = big[oy:oy + H, ox:ox + W].copy()
         for fx in effects:                     # scene ambient animations
             fx(img, t)
         if mood == "columbarium":              # cool motes drifting slowly down

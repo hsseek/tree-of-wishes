@@ -53,6 +53,24 @@ These come for free from the renderer — there is nothing to place or tune. Do
 `--no-pan`. (If the user explicitly asks for a pan or a specific effect back, you
 can, but the default is just the wish-lights + music.)
 
+## Animated background (--bg-video) — optional richer motion
+Instead of a still `--image`, the background can be a **pre-pixelized clip** (an
+AI image-to-video animation of the scene, run through `wish-pixelize --video`):
+```bash
+.venv/bin/python scripts/video_anim.py \
+  --bg-video instagram_videos/pixelized/px_NAME.mp4 --ids ID1 ID2 --no-pan \
+  --out instagram_videos/reel_NAME.mp4
+```
+- The clip **ping-pong loops** to fill the (longer) wish duration — seamless, no
+  hard cut at the loop seam. A page-turn will *reverse* on the back-leg; fine for
+  candle/fire/stars, switch the user to a hard loop if a prominent page-turn looks
+  odd. (`--bg-video` ignores `--image`, pan, and `--focus` — the clip carries the
+  motion.)
+- Everything else is identical: wish-lights, text, name attribution, grain,
+  vignette, brand handle, length-aware timing. Music + caption steps unchanged.
+- This is `--image`'s sibling, **not** the procedural-drawing path that was
+  rejected: the *clip* (user-supplied AI art) still carries the beauty.
+
 ## Steps
 1. **Mood is auto-inferred** from the wishes' board — the engine fetches each wish
    from the live API, so just leave `--board auto` (default). Only pass
