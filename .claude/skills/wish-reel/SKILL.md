@@ -115,8 +115,18 @@ can, but the default is just the wish-lights + music.)
 - Never invent facts not in the wish; never include personal info (names, contacts).
   ≤ ~600 chars.
 
+## Attribution (named vs anonymous wishes)
+Each wish from the API carries a `name` field: a string when the wisher signed it,
+`null`/empty when they posted **anonymously**. The renderer draws an attribution
+line `— {name}` just under the wish (smaller, warm-gold Galmuri) **only when the
+name is non-empty** — anonymous wishes show the text alone, no placeholder. This
+is automatic; there is nothing to pass. It is **not** a contradiction of the "no
+personal info" caption rule: that rule governs *the caption you write*; the
+on-screen name is the public, wisher-chosen signature already shown on the site.
+
 ## Identity (keep consistent across reels)
 1080×1920 · retro **Galmuri11** Hangul pixel text, top-aligned, hard shadow ·
+named wishes get a warm-gold `— 이름` attribution line (anonymous show none) ·
 **static frame** (no pan) · film grain + vignette · brand handle `tree-of-wishes.fyi` ·
 **tree** = warm wish-lights rising · **columbarium** = cool motes drifting down ·
 original lo-fi soundtrack.
