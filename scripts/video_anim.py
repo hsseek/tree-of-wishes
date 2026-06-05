@@ -92,8 +92,12 @@ def _wrap(d, text, font, max_w):
     return lines
 
 
-def draw_text(pil, text, alpha):
-    """Retro pixel text, top-aligned, with a hard offset shadow for legibility."""
+def draw_text(pil, text, alpha, name=None):
+    """Retro pixel text, top-aligned, with a hard offset shadow for legibility.
+
+    If ``name`` is a non-empty string (the wisher chose not to stay anonymous),
+    an attribution line ``— name`` is drawn just below the wish in a smaller,
+    warmer pixel type."""
     d = ImageDraw.Draw(pil)
     font = ImageFont.truetype(FONT, 44)        # multiple of 11 → crisp Galmuri
     lines = _wrap(d, text, font, int(W * 0.86))
@@ -105,6 +109,14 @@ def draw_text(pil, text, alpha):
         d.text((x + 4, y + 4), ln, font=font, fill=(0, 0, 0, int(a * 0.7)))   # hard shadow
         d.text((x, y), ln, font=font, fill=(247, 244, 236, a))
         y += 62
+    if name:                                   # named wish → show the wisher
+        nf = ImageFont.truetype(FONT, 33)      # multiple of 11, a touch smaller
+        attribution = f"— {name}"
+        nw = d.textlength(attribution, font=nf)
+        nx = round((W - nw) / 2)
+        ny = y + 8
+        d.text((nx + 3, ny + 3), attribution, font=nf, fill=(0, 0, 0, int(a * 0.7)))
+        d.text((nx, ny), attribution, font=nf, fill=(236, 214, 170, a))   # warm gold
     hf = ImageFont.truetype(FONT, 22)
     hw = d.textlength("tree-of-wishes.fyi", font=hf)
     d.text((round((W - hw) / 2) + 3, H - 92 + 3), "tree-of-wishes.fyi", font=hf,
@@ -476,6 +488,7 @@ def main():
     # fixed budget is split across wishes in proportion to their length.
     FADE, LEAD = 0.6, 0.6
     texts = [" ".join((w.get("text") or "").split()) for w in wishes]
+    names = [(w.get("name") or "").strip() for w in wishes]   # "" = anonymous
     raw = [min(args.max_hold, max(args.min_hold, len(tx) / args.cps)) for tx in texts]
     if args.seconds:
         budget = max(0.5, args.seconds - len(wishes) * (LEAD + 2 * FADE))
@@ -528,7 +541,7 @@ def main():
         for i in range(len(wishes)):
             a = text_alpha(t, start=starts[i], hold=holds[i], fade=FADE)
             if a > 0:
-                draw_text(scene, texts[i], a)
+                draw_text(scene, texts[i], a, names[i])
         proc.stdin.write(np.ascontiguousarray(
             np.asarray(scene.convert("RGB"), dtype=np.uint8)).tobytes())
     proc.stdin.close()
