@@ -71,6 +71,20 @@ AI image-to-video animation of the scene, run through `wish-pixelize --video`):
 - This is `--image`'s sibling, **not** the procedural-drawing path that was
   rejected: the *clip* (user-supplied AI art) still carries the beauty.
 
+### Hiding a free-tier watermark (--logo-cover)
+Free image-to-video tools burn a **static corner logo** (e.g. "KLING AI") into the
+clip; it survives pixelization as a faint smudge. `--logo-cover` paints over a
+fixed box by mirroring the clean opposite corner (feathered, applied before
+grain/vignette so it blends):
+```bash
+... --bg-video px_NAME.mp4 --logo-cover br      # br|bl|tr|tl, or x=,y=,w=,h=
+```
+- `br|bl|tr|tl` use a default ~275×95 corner box; pass `x=,y=,w=,h=` (frame px) to
+  match a different watermark. Inspect the clip's corner first to confirm the mark
+  is **static** — a moving watermark needs a different approach (crop/regen).
+- It is **not** a license; only use on art you have rights to, and prefer a clean
+  source (paid export / watermark-free tool) when you can.
+
 ## Steps
 1. **Mood is auto-inferred** from the wishes' board — the engine fetches each wish
    from the live API, so just leave `--board auto` (default). Only pass

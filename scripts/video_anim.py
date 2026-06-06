@@ -90,6 +90,59 @@ def pingpong(f, n):
     return k if k < n else period - k
 
 
+# ── logo / watermark cover ──────────────────────────────────────────────────
+# Hide a fixed-position source watermark (e.g. a free-tier "KLING AI" mark) by
+# folding the clean opposite corner over it. Free AI image-to-video tools burn a
+# static corner logo into the clip; this paints over it before grain/vignette so
+# it blends. NOT a license — only use on art you have rights to.
+_CORNER_BOX = {              # default boxes per corner (x0, y0, x1, y1)
+    "br": (W - 275, H - 95, W, H),
+    "bl": (0, H - 95, 275, H),
+    "tr": (W - 275, 0, W, 95),
+    "tl": (0, 0, 275, 95),
+}
+
+
+def parse_logo_cover(spec):
+    """`br|bl|tr|tl` for a default corner box, or `x=..,y=..,w=..,h=..` (px)."""
+    if not spec:
+        return None
+    s = spec.strip().lower()
+    if s in _CORNER_BOX:
+        return _CORNER_BOX[s]
+    p = dict(kv.split("=") for kv in s.split(",") if "=" in kv)
+    try:
+        x, y = int(p["x"]), int(p["y"])
+        x1, y1 = x + int(p["w"]), y + int(p["h"])
+    except (KeyError, ValueError):
+        raise SystemExit(f"--logo-cover: bad spec {spec!r} (use br|bl|tr|tl or x=,y=,w=,h=)")
+    return max(0, x), max(0, y), min(W, x1), min(H, y1)
+
+
+def make_cover_mask(box, feather=16):
+    """Feathered alpha: 1 toward the frame corner, faded on the inner edges only."""
+    x0, y0, x1, y1 = box
+    w, h = x1 - x0, y1 - y0
+    ax, ay = np.ones(w), np.ones(h)
+    f = min(feather, w, h)
+    if x0 > 0:                       # inner (left) edge borders the scene → feather
+        ax[:f] = np.linspace(0, 1, f)
+    if x1 < W:                       # inner (right) edge
+        ax[-f:] = np.linspace(1, 0, f)
+    if y0 > 0:                       # inner (top) edge
+        ay[:f] = np.linspace(0, 1, f)
+    if y1 < H:                       # inner (bottom) edge
+        ay[-f:] = np.linspace(1, 0, f)
+    return (ay[:, None] * ax[None, :])[..., None]
+
+
+def apply_logo_cover(img, box, mask):
+    """Blend the horizontally-mirrored opposite-corner pixels over the box."""
+    x0, y0, x1, y1 = box
+    patch = img[y0:y1, W - x1:W - x0][:, ::-1]          # mirror across the centre line
+    img[y0:y1, x0:x1] = img[y0:y1, x0:x1] * (1 - mask) + patch * mask
+
+
 def add_glow(img, cx, cy, color, a):
     x0, y0 = cx - _R, cy - _R
     x1, y1 = cx + _R + 1, cy + _R + 1
@@ -453,6 +506,9 @@ def main():
     ap.add_argument("--bg-video", dest="bg_video",
                     help="animated (already pixelized) background clip; ping-pong "
                          "looped under the wishes instead of a still --image")
+    ap.add_argument("--logo-cover", dest="logo_cover",
+                    help="hide a fixed-position source watermark by mirroring the "
+                         "clean opposite corner over it: br|bl|tr|tl or x=,y=,w=,h=")
     ap.add_argument("--ids", nargs="*", type=int)
     ap.add_argument("--board", default="auto", choices=["auto", "tree", "columbarium"],
                     help="mood; 'auto' infers it from the wishes' board")
@@ -550,6 +606,8 @@ def main():
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     effects = [f for f in (compile_fx(s) for s in args.fx) if f]
+    cover_box = parse_logo_cover(args.logo_cover)
+    cover_mask = make_cover_mask(cover_box) if cover_box else None
     src_name = Path(args.bg_video).name if bg_frames is not None else Path(args.image).name
     bg_note = f" (bg {len(bg_frames)} frames, ping-pong)" if bg_frames is not None else ""
     print(f"Rendering {total:.1f}s [{mood}] from {src_name}{bg_note} "
@@ -570,6 +628,8 @@ def main():
             off = pan_start + int(pan_span * u)
             ox, oy = (off, py // 2) if horizontal else (px // 2, off)
             img = big[oy:oy + H, ox:ox + W].copy()
+        if cover_box:                          # hide a baked-in source watermark
+            apply_logo_cover(img, cover_box, cover_mask)
         for fx in effects:                     # scene ambient animations
             fx(img, t)
         if mood == "columbarium":              # cool motes drifting slowly down
