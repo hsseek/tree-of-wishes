@@ -71,12 +71,14 @@ async function submitNewWish(e) {
   btn.textContent = i18n.t('wish.submitting');
 
   const fd = new FormData(form);
+  // Bake in the page language so anonymous reminder emails can be localized.
+  fd.append('lang', (typeof i18n !== 'undefined' && i18n.getLang) ? i18n.getLang() : 'ko');
   try {
     const resp = await fetch('/api/wishes', { method: 'POST', body: fd });
     if (resp.ok) {
+      const wish = await resp.json().catch(() => ({}));
       form.reset();
-      closeNewWish();
-      _showToast('Wish placed on the tree!', 'success');
+      _showPlacedConfirmation(wish.id);
       window.wishGrid?.init();
     } else {
       const err = await resp.json().catch(() => ({}));
@@ -86,6 +88,35 @@ async function submitNewWish(e) {
     btn.disabled = false;
     btn.textContent = i18n.t('wish.submit');
   }
+}
+
+/** After a wish is placed, swap the form for a confirmation that hands the
+ *  wisher their own deep link — a reason (and a way) to come back later. */
+function _showPlacedConfirmation(wishId) {
+  const panel = document.querySelector('#new-wish-overlay .new-wish-panel');
+  if (!panel || !wishId) { closeNewWish(); _showToast(i18n.t('wish.placedTitle'), 'success'); return; }
+
+  const lang = (typeof i18n !== 'undefined' && i18n.getLang) ? i18n.getLang() : 'ko';
+  const url = `${window.location.origin}/wish/${wishId}?lang=${lang}`;
+
+  panel.innerHTML = `
+    <h2>${_esc(i18n.t('wish.placedTitle'))}</h2>
+    <p class="placed-hint">${_esc(i18n.t('wish.saveLinkHint'))}</p>
+    <div class="placed-link-row">
+      <input id="placed-link" class="placed-link-input" type="text" readonly value="${_esc(url)}" />
+      <button type="button" id="btn-copy-link" class="btn-secondary">${_esc(i18n.t('wish.copyLink'))}</button>
+    </div>
+    <div class="form-actions">
+      <a class="btn-secondary" href="${_esc(url)}">${_esc(i18n.t('wish.viewWish'))}</a>
+      <button type="button" id="btn-placed-close" class="btn-primary">${_esc(i18n.t('btn.close'))}</button>
+    </div>`;
+
+  document.getElementById('placed-link')?.addEventListener('focus', e => e.target.select());
+  document.getElementById('btn-copy-link')?.addEventListener('click', async () => {
+    const ok = await _copyText(url);
+    _showToast(ok ? i18n.t('wish.linkCopied') : url, ok ? 'success' : 'info');
+  });
+  document.getElementById('btn-placed-close')?.addEventListener('click', () => location.reload());
 }
 
 function _apiErrMsg(status, detail) {

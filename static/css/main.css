@@ -287,7 +287,6 @@ body { min-height: 100vh; font-family: var(--font); background: var(--bg); color
 /* Fulfilled wish: pure white, radiant golden halo */
 .ff-fulfilled {
   color: var(--ff-fulfilled);
-  font-size: 32px;
   text-shadow:
     0 0 4px  rgba(255,255,255,1),
     0 0 10px rgba(255,250,200,1),
@@ -358,7 +357,9 @@ body { min-height: 100vh; font-family: var(--font); background: var(--bg); color
     0 0 12px rgba(120, 190, 60, 0.55),
     0 0 22px rgba(100, 170, 50, 0.35);
 }
-.ff-new .ff-label { color: var(--ff-new); opacity: 0.85; text-shadow: 0 0 6px rgba(143, 209, 74, 0.6); }
+/* Scoped to spare fulfilled labels, mirroring the glyph rule above: a fulfilled
+   wish keeps its white "fulfilled" colour even when it's also new. */
+.ff-new .ff-label:not(.ff-label-fulfilled) { color: var(--ff-new); opacity: 0.85; text-shadow: 0 0 6px rgba(143, 209, 74, 0.6); }
 
 /* Near-expiry dying visualization */
 .ff-dying .ff-glyph.ff-active {
@@ -740,6 +741,17 @@ body.season-winter .ff-popular .ff-glyph {
 .form-field select { cursor: pointer; }
 .form-field textarea { resize: vertical; min-height: 80px; }
 .form-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 14px; }
+
+/* Post-submit confirmation: the wisher's own deep link back to their wish. */
+.placed-hint { font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-bottom: 14px; }
+.placed-link-row { display: flex; gap: 8px; align-items: stretch; }
+.placed-link-input {
+  flex: 1; min-width: 0; padding: 7px 10px; background: var(--bg); border: 1px solid var(--border);
+  color: var(--text); font-family: var(--font); font-size: 12px; border-radius: var(--radius);
+}
+.placed-link-input:focus { outline: 2px solid var(--accent); }
+.placed-link-row .btn-secondary { white-space: nowrap; }
+.form-actions a.btn-secondary { text-decoration: none; display: inline-flex; align-items: center; }
 
 /* ─── Settings / About / My Wishes pages ─────────────────────────────────────── */
 .page-content { padding: 24px 16px 48px; max-width: 900px; margin: 0 auto; }

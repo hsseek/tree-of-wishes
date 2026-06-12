@@ -162,8 +162,11 @@ class FireflyCanvas {
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const dueDate = wish.due_date ? new Date(wish.due_date + 'T00:00:00') : null;
     const daysLeft = dueDate ? Math.round((dueDate - today) / 86400000) : null;
-    const isDying    = wish.status === 'active' && daysLeft !== null && daysLeft <= 7 && daysLeft > 1;
-    const isCritical = wish.status === 'active' && daysLeft !== null && daysLeft <= 1;
+    // A freshly-made wish can already have a near due date (due date only has to
+    // be in the future), which would otherwise flag it as expiring. "New" wins:
+    // suppress the dying/critical flicker while the wish still counts as new.
+    const isDying    = !isNew && wish.status === 'active' && daysLeft !== null && daysLeft <= 7 && daysLeft > 1;
+    const isCritical = !isNew && wish.status === 'active' && daysLeft !== null && daysLeft <= 1;
 
     // Random animation params — all plain numbers, no string coercion tricks
     const rx          = 15 + Math.random() * 32;   // px

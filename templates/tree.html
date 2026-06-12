@@ -46,6 +46,12 @@
       </div>
       {% if not current_user %}
       <div class="form-field">
+        <label for="nw-email" data-i18n="wish.reminderEmail">Reminder email (optional)</label>
+        <input id="nw-email" name="email" type="email"
+          data-i18n-placeholder="wish.reminderEmailPlaceholder"
+          placeholder="We'll remind you on the due date" />
+      </div>
+      <div class="form-field">
         <label for="nw-pw" data-i18n="wish.password">Password</label>
         <input id="nw-pw" name="password" type="password" required
           data-i18n-placeholder="wish.passwordPlaceholder"

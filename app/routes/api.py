@@ -1,8 +1,7 @@
+import re
 import uuid
 import mimetypes
 import secrets
-import smtplib
-from email.message import EmailMessage
 from datetime import datetime, date
 from pathlib import Path
 from typing import Optional
@@ -21,6 +20,7 @@ from ..database import get_db
 from ..models import Wish, WishStatus, effective_age_expr
 from ..services.analytics import record_dwell
 from ..services.capacity import ensure_tree_capacity
+from ..services.email import send_email
 from ..services.rate_limit import (
     check_creation_rate, record_creation,
     can_like, record_like, revoke_like,
@@ -29,7 +29,7 @@ from ..services.rate_limit import (
 )
 from ..config import (
     MAX_FILE_SIZE_BYTES, ALLOWED_MIME_TYPES, UPLOAD_DIR,
-    REPORT_EMAIL, SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS,
+    REPORT_EMAIL, SMTP_HOST,
     BASE_URL, ADMIN_EMAIL, REEL_API_TOKEN,
 )
 from ..models import User
@@ -59,29 +59,20 @@ def _check_auth(wish: "Wish", password: Optional[str], request: Request, db: Ses
 
 
 def _send_smtp_email(subject: str, body: str) -> None:
-    """Send an email via SMTP. Raises on failure."""
-    if not REPORT_EMAIL or not SMTP_HOST:
+    """Send an email to the configured report inbox. Raises on failure."""
+    if not REPORT_EMAIL:
         return
-    msg = EmailMessage()
-    msg["Subject"] = subject
-    msg["From"] = SMTP_USER or REPORT_EMAIL
-    msg["To"] = REPORT_EMAIL
-    msg.set_content(body)
-    with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as smtp:
-        smtp.ehlo()
-        smtp.starttls()
-        if SMTP_USER and SMTP_PASS:
-            smtp.login(SMTP_USER, SMTP_PASS)
-        smtp.send_message(msg)
+    send_email(REPORT_EMAIL, subject, body)
 
 
 def _notify_first_like(to_email: str, wish_text: str, wish_id: int, language: str = 'en') -> None:
     snippet = wish_text[:80] + ('…' if len(wish_text) > 80 else '')
-    link = f"{BASE_URL}/wish/{wish_id}"
+    lang = 'ko' if language == 'ko' else 'en'
+    link = f"{BASE_URL}/wish/{wish_id}?lang={lang}"
     if language == 'ko':
         subject = "[소원의 나무] 소원에 첫 번째 좋아요가 달렸습니다"
         body = (
-            "누군가 회원님의 소원에 좋아요를 눌렀습니다!\n\n"
+            "누군가 당신의 소원에 좋아요를 눌렀습니다!\n\n"
             f"소원   : {snippet}\n"
             f"링크   : {link}"
         )
@@ -93,7 +84,7 @@ def _notify_first_like(to_email: str, wish_text: str, wish_id: int, language: st
             f"Link   : {link}"
         )
     try:
-        _send_smtp_email(subject, body)
+        send_email(to_email, subject, body)
     except Exception:
         pass
 
@@ -119,6 +110,19 @@ def _notify_eviction(info: dict) -> None:
 
 
 PAGE_SIZE = 50
+
+
+_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
+def _clean_reminder_email(raw: Optional[str]) -> Optional[str]:
+    """Normalise an optional reminder email: None/blank → None; reject malformed."""
+    email = (raw or "").strip()
+    if not email:
+        return None
+    if not _EMAIL_RE.match(email):
+        raise HTTPException(400, "Invalid email address.")
+    return email
 
 
 def _client_ip(request: Request) -> str:
@@ -275,11 +279,20 @@ def like_wish(
     record_like(db, ip, wish_id)
     wish.likes += 1
     db.commit()
-    if wish.likes == 1 and wish.owner_id is not None:
-        owner = db.query(User).filter(User.id == wish.owner_id).first()
-        if owner and owner.email:
+    # First flower → email the wisher: a registered owner at their account email,
+    # or an anonymous wisher who opted in with a reminder email (Korean, like the
+    # reminder mail). One email at most; account email wins if both exist.
+    if wish.likes == 1:
+        to_email, language = None, "en"
+        if wish.owner_id is not None:
+            owner = db.query(User).filter(User.id == wish.owner_id).first()
+            if owner and owner.email:
+                to_email, language = owner.email, (owner.language or "en")
+        elif wish.reminder_email:
+            to_email, language = wish.reminder_email, "ko"
+        if to_email:
             background_tasks.add_task(
-                _notify_first_like, owner.email, wish.text, wish.id, owner.language or 'en'
+                _notify_first_like, to_email, wish.text, wish.id, language
             )
     return {"likes": wish.likes, "liked": True}
 
@@ -293,6 +306,8 @@ async def create_wish(
     text: str = Form(...),
     name: Optional[str] = Form(None),
     password: Optional[str] = Form(None),
+    email: Optional[str] = Form(None),
+    lang: Optional[str] = Form(None),
     due_date: str = Form(...),
     attachment: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
@@ -300,6 +315,10 @@ async def create_wish(
     user_id = request.session.get("user_id")
     if not user_id and not password:
         raise HTTPException(400, "Password is required.")
+
+    reminder_email = _clean_reminder_email(email)
+    wish_lang = (lang or "").strip().lower()
+    wish_lang = wish_lang if wish_lang in {"en", "ko"} else None
 
     ip = _client_ip(request)
     if not check_creation_rate(db, ip):
@@ -337,6 +356,8 @@ async def create_wish(
         attachment_filename=attachment_filename,
         attachment_mimetype=attachment_mimetype,
         owner_id=request.session.get("user_id"),
+        reminder_email=reminder_email,
+        lang=wish_lang,
     )
     db.add(wish)
     record_creation(db, ip)
@@ -426,19 +447,33 @@ async def edit_wish(
 def fulfill_wish(
     wish_id: int,
     request: Request,
-    password: Optional[str] = Form(None),
+    background_tasks: BackgroundTasks,
+    # Password in the query, not the body: owners send no password, and an empty
+    # form body gets mangled in transit (proxy/tunnel), breaking body parsing.
+    password: Optional[str] = Query(None),
     db: Session = Depends(get_db),
 ):
-    wish = db.query(Wish).filter(Wish.id == wish_id, Wish.board == "tree").first()
+    wish = db.query(Wish).filter(Wish.id == wish_id).first()
     if not wish:
         raise HTTPException(404, "Wish not found")
     _check_auth(wish, password, request, db)
     if wish.status == WishStatus.fulfilled:
         raise HTTPException(409, "Already fulfilled")
+
+    # A wish that expired to the columbarium can still be marked fulfilled: it
+    # comes back to life on the tree as a normal fulfilled wish (its original
+    # due_date is kept — fulfilled wishes never expire). Make room first.
+    evicted = None
+    if wish.board == "columbarium":
+        evicted = ensure_tree_capacity(db)
+        wish.board = "tree"
+
     wish.status = WishStatus.fulfilled
     wish.fulfilled_at = datetime.utcnow()
     db.commit()
     db.refresh(wish)
+    if evicted:
+        background_tasks.add_task(_notify_eviction, evicted)
     return _wish_to_dict(wish)
 
 
@@ -448,7 +483,7 @@ def fulfill_wish(
 def unfulfill_wish(
     wish_id: int,
     request: Request,
-    password: Optional[str] = Form(None),
+    password: Optional[str] = Query(None),
     db: Session = Depends(get_db),
 ):
     wish = db.query(Wish).filter(Wish.id == wish_id, Wish.board == "tree").first()
@@ -470,7 +505,11 @@ def unfulfill_wish(
 def delete_wish(
     wish_id: int,
     request: Request,
-    password: Optional[str] = Form(None),
+    # Password rides in the query string, not the body: proxies (e.g. Cloudflare)
+    # routinely strip DELETE request bodies, which made form-parsing fail with
+    # "There was an error parsing the body". Owners/admins authenticate by session
+    # and send no password at all.
+    password: Optional[str] = Query(None),
     db: Session = Depends(get_db),
 ):
     wish = db.query(Wish).filter(Wish.id == wish_id).first()

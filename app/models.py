@@ -33,6 +33,14 @@ class Wish(Base):
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     # "tree" or "columbarium" — which store this wish lives in
     board = Column(String, nullable=False, default="tree")
+    # Optional opt-in reminder: where to email a "your wish's due date is here" nudge,
+    # and when that nudge was sent (NULL = not yet). Never exposed in any API response.
+    reminder_email = Column(String, nullable=True)
+    reminder_sent_at = Column(DateTime, nullable=True)
+    # Page language the wish was created in ("ko"/"en"). Localizes the reminder
+    # email for anonymous wishers (registered users use their account language).
+    # NULL on older rows → treated as Korean.
+    lang = Column(String, nullable=True)
 
     owner = relationship("User", back_populates="wishes")
     like_records = relationship("LikeRecord", back_populates="wish", cascade="all, delete-orphan")

@@ -262,9 +262,9 @@ class WishModal {
         ${attachmentControls}
         <div class="edit-actions">
           <button id="btn-save" class="btn-primary">${i18n.t('wish.save')}</button>
-          ${wish.status !== 'dead' ? `<button id="btn-fulfill" class="btn-secondary">
+          <button id="btn-fulfill" class="btn-secondary">
             ${isFulfilled ? i18n.t('wish.markUnfulfilled') : i18n.t('wish.markFulfilled')}
-          </button>` : ''}
+          </button>
           <button id="btn-delete" class="btn-danger">${i18n.t('wish.delete')}</button>
         </div>
       </div>`;
@@ -318,13 +318,14 @@ class WishModal {
 
   async _doFulfill() {
     const wish = this._currentWish;
-    const endpoint = wish.status === 'fulfilled'
+    let endpoint = wish.status === 'fulfilled'
       ? `/api/wishes/${wish.id}/unfulfill`
       : `/api/wishes/${wish.id}/fulfill`;
-
-    const fd = new FormData();
-    this._appendPassword(fd);
-    const resp = await fetch(endpoint, { method: 'POST', body: fd });
+    // Send no body — password rides in the query (proxies mangle empty bodies).
+    if (this._storedPassword !== null) {
+      endpoint += `?password=${encodeURIComponent(this._storedPassword)}`;
+    }
+    const resp = await fetch(endpoint, { method: 'POST' });
     if (resp.ok) {
       const updated = await resp.json();
       this._currentWish = updated;
@@ -341,9 +342,12 @@ class WishModal {
 
   async _doDelete() {
     if (!confirm(i18n.t('wish.confirmDelete'))) return;
-    const fd = new FormData();
-    this._appendPassword(fd);
-    const resp = await fetch(`/api/wishes/${this._currentWish.id}`, { method: 'DELETE', body: fd });
+    // Send no DELETE body — proxies strip it. Password (non-owners) goes in the query.
+    let url = `/api/wishes/${this._currentWish.id}`;
+    if (this._storedPassword !== null) {
+      url += `?password=${encodeURIComponent(this._storedPassword)}`;
+    }
+    const resp = await fetch(url, { method: 'DELETE' });
     if (resp.ok) {
       _showToast('Wish deleted', 'success');
       this.close();

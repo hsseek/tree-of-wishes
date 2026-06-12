@@ -1,7 +1,6 @@
 import json
 import time
 from datetime import datetime, timedelta
-from functools import lru_cache
 from pathlib import Path
 from typing import Optional
 
@@ -49,8 +48,9 @@ def _get_season() -> str:
         return "winter"
 
 
-@lru_cache(maxsize=None)
 def _load_locale(lang: str) -> str:
+    # Read fresh each render so locale edits show up without a full restart.
+    # The files are tiny and the OS page-caches them, so this is effectively free.
     path = Path("static/locales") / f"{lang}.json"
     return path.read_text(encoding="utf-8")
 

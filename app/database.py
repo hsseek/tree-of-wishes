@@ -27,6 +27,9 @@ def run_migrations():
         ("users", "avatar_url", "ALTER TABLE users ADD COLUMN avatar_url VARCHAR"),
         ("users", "language",   "ALTER TABLE users ADD COLUMN language VARCHAR DEFAULT 'en'"),
         ("daily_visits", "source", "ALTER TABLE daily_visits ADD COLUMN source VARCHAR"),
+        ("wishes", "reminder_email", "ALTER TABLE wishes ADD COLUMN reminder_email VARCHAR"),
+        ("wishes", "reminder_sent_at", "ALTER TABLE wishes ADD COLUMN reminder_sent_at DATETIME"),
+        ("wishes", "lang", "ALTER TABLE wishes ADD COLUMN lang VARCHAR"),
     ]
     # Indexes added after the initial schema. create_all() only builds indexes when it
     # creates a table, so existing databases need these applied explicitly. CREATE INDEX
