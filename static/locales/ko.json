@@ -78,6 +78,7 @@
   "wish.placed": "등록",
   "wish.fulfilledOn": "이루어진 날",
   "wish.status.active": "진행 중",
+  "wish.status.new": "새 소원",
   "wish.status.expiring": "{n}일 뒤 봉안당 이전",
   "wish.status.expiringTomorrow": "내일 봉안당 이전",
   "wish.status.expiringSoon": "곧 봉안당 이전",

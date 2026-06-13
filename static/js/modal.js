@@ -117,12 +117,24 @@ class WishModal {
     }[wish.status] || '';
     let statusClass = wish.status;
 
+    // A recently-placed wish shows "New" (keeping the active colour), matching the
+    // green "new" firefly. Date-based (created within the last 24h) so it's
+    // independent of what the grid has loaded — created_at is naive UTC, parsed
+    // via the same helper the grid uses.
+    const isNew = wish.status === 'active' && wish.board === 'tree'
+      && wish.created_at && typeof _utcMillis === 'function'
+      && _utcMillis(wish.created_at) >= Date.now() - 24 * 60 * 60 * 1000;
+
     // Expiring active wishes (≤7 days left) show a countdown to their Columbarium
     // move instead of the plain "active" chip, so a clicker understands the blink.
+    // "New" takes precedence over the countdown, mirroring the firefly.
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const dueDate = wish.due_date ? new Date(wish.due_date + 'T00:00:00') : null;
     const daysLeft = dueDate ? Math.round((dueDate - today) / 86400000) : null;
-    if (wish.status === 'active' && daysLeft !== null && daysLeft <= 7) {
+    if (isNew) {
+      statusLabel = i18n.t('wish.status.new');
+      statusClass = 'active';
+    } else if (wish.status === 'active' && daysLeft !== null && daysLeft <= 7) {
       // The lazy sweep moves a wish only once its due_date has *passed*
       // (due_date < today), i.e. at the start of the day after the due date —
       // so the actual move is (daysLeft + 1) days away, not daysLeft.
@@ -160,12 +172,16 @@ class WishModal {
     // creators can unlock with their password and edit/delete (tree and columbarium alike).
     const showUnlock = !this._isOwner && !this._isAdmin;
 
-    const statusHtml = statusLabel
-      ? `<div class="modal-status ${statusClass}">${statusLabel}</div>`
-      : '';
+    // The status now lives in the header bar (the space the decorative ✦ used to
+    // hold, left of the nav buttons) rather than at the top of the body.
+    const statusHost = this.el.querySelector('.modal-status-host');
+    if (statusHost) {
+      statusHost.innerHTML = statusLabel
+        ? `<div class="modal-status ${statusClass}">${statusLabel}</div>`
+        : '';
+    }
 
     body.innerHTML = `
-      ${statusHtml}
       <div class="modal-text">${_esc(wish.text)}</div>
       ${wish.name ? `<div class="modal-name">— ${_esc(wish.name)}</div>` : ''}
       <div class="modal-meta">
