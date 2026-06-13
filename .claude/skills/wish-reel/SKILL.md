@@ -1,6 +1,6 @@
 ---
 name: wish-reel
-description: Generate an Instagram Reel (vertical 1080x1920 lofi pixel-art video) for Tree of Wishes from a still pixel-art image + a list of wish IDs, generate original lo-fi background music, and write its Korean caption. Use when the user wants to turn wishes into an Instagram video/reel, or says things like "make a reel / 영상 만들어 / 인스타 영상" with wish IDs and an image.
+description: Generate an Instagram Reel (vertical 1080x1920 lofi pixel-art video) for Tree of Wishes from a still pixel-art image + a list of wish IDs, loop it to a user-supplied music track, and write its Korean caption. Use when the user wants to turn wishes into an Instagram video/reel, or says things like "make a reel / 영상 만들어 / 인스타 영상" with wish IDs and an image.
 ---
 
 # Wish Reel — Instagram video generator
@@ -8,8 +8,9 @@ description: Generate an Instagram Reel (vertical 1080x1920 lofi pixel-art video
 Turn a beautiful **still** pixel-art illustration + some wishes into a relaxing
 vertical Reel: a static (no-pan) frame with the wishes fading in at the top in a
 retro Hangul pixel font, **the only motion being the warm wish-lights drifting
-upward** (cool motes for columbarium), film grain + vignette — plus a sweep of
-**original lo-fi music** to choose from, and a ready-to-paste caption.
+upward** (cool motes for columbarium), film grain + vignette — set to a
+**music track the user supplies** (the reel loops to fill the track's length),
+and a ready-to-paste caption.
 
 **Task 3 of a 3-stage pipeline:** Task 1 = generate the original scene with an
 external image tool (Nano Banana / Midjourney; Claude only supplies prompts).
@@ -37,9 +38,10 @@ much longer (reading speed ≈ `--cps` chars/sec, default 6). The **total video
 length is therefore dynamic** (the sum of per-wish reading times) and is printed
 by the renderer. Tune with `--cps` (lower = slower/longer), `--min-hold`,
 `--max-hold`. Only pass `--seconds` if you need a *fixed* total — it then splits
-that budget across wishes still **in proportion to their length**. Because the
-length varies, **generate the music to match the rendered video's duration**
-(see Step 3).
+that budget across wishes still **in proportion to their length**. The final
+duration, however, is set by the **user-supplied music**: the rendered reel is
+**looped to fill the track's length** (see Steps 3–4), so the music — not the
+wish count — decides how long the posted video runs.
 
 ## Motion policy (deliberate — keep it minimal)
 The reel has **no ambient effects and no Ken-Burns pan**. The *only* animation is
@@ -87,37 +89,34 @@ AI image-to-video animation of the scene, run through `wish-pixelize --video`):
    ~40–60s to render. **Don't hardcode `--seconds`** — the length is dynamic; the
    renderer prints the total. Output is **silent** (music is added next). Wishes
    come from the API (token-gated; needs `REEL_API_TOKEN`) — **no local DB**.
-3. **Always generate 3 lo-fi music candidates and let the USER pick.** Every time
-   you make a video, produce all three and present them by name/blurb — **never
-   auto-select, never skip this, and never decide for the user.** The user picks
-   the one they find most appealing themselves. Match `--mood` to the reel's mood
-   and `--seconds` to the **rendered video's actual duration** (read it back,
-   don't guess):
+3. **Music — the USER supplies the track; do NOT compose it.** Ask the user for a
+   music file (mp3/wav/m4a) and probe its duration. The music's length sets the
+   final video length (the reel is looped to fill it in Step 4):
    ```bash
-   DUR=$(ffprobe -v error -show_entries format=duration -of csv=p=0 \
-         instagram_videos/reel_NAME.mp4)
-   .venv/bin/python scripts/lofi.py --mood tree --seconds "$DUR" \
-     --out-prefix instagram_videos/reel_NAME.track
-   # -> reel_NAME.track_c1.wav (Warm Keys) / _c2.wav (Chill Beat) / _c3.wav (Dreamy Pad)
+   MUSIC="PATH/to/track.mp3"
+   ffprobe -v error -show_entries format=duration -of csv=p=0 "$MUSIC"   # music length
    ```
-   The three presets are fixed (it's fine to re-offer the same tunes across
-   reels). The audio is **original** (synthesized, no samples) → safe for
-   commercial use. To re-render a single one at a tweaked length, add
-   `--candidate c2`. **Then stop and wait for the user's choice** before muxing.
-4. **Mux the chosen track into the mp4** (auto, with ffmpeg) — only after the
-   user has named one (e.g. `c2`):
+   The reel's own (silent) length is dynamic — the sum of per-wish reading times,
+   printed in Step 2. Ideally the track is **at least as long** as that rendered
+   reel; if the music is shorter, the video is cut off at the music's end
+   (`-shortest`) and later wishes won't be shown — flag this to the user.
+4. **Loop the reel to the music & mux** (auto, ffmpeg) — the silent reel video
+   loops to fill the track, the audio is the user's file, and the output ends when
+   the music ends:
    ```bash
-   ffmpeg -y -i instagram_videos/reel_NAME.mp4 \
-     -i instagram_videos/reel_NAME.track_c2.wav \
-     -c:v copy -c:a aac -b:a 192k -shortest \
-     instagram_videos/reel_NAME.final.mp4
+   ffmpeg -y -stream_loop -1 -i instagram_videos/reel_NAME.mp4 -i "$MUSIC" \
+     -map 0:v:0 -map 1:a:0 -c:v libx264 -pix_fmt yuv420p -c:a aac -b:a 192k \
+     -shortest -movflags +faststart instagram_videos/reel_NAME.final.mp4
    ```
-   `-shortest` trims audio to the video length (the track is already generated to
-   `--seconds`, so they match). `reel_NAME.final.mp4` is the ready-to-post video.
+   `-stream_loop -1` repeats the (silent) reel as many times as needed; `-shortest`
+   stops the output at the music's end, so the looped video matches the track
+   length. `reel_NAME.final.mp4` is the ready-to-post video.
 5. **Caption — you (Claude) write it**, no API call. Save to
    `instagram_videos/reel_NAME.caption.txt` and show it. Follow the rules below.
-6. **Report**: the `.final.mp4` path + the caption. Confirm the art is licensed for
-   commercial use (the music is original, so it's already cleared).
+6. **Report**: the `.final.mp4` path + the caption. Confirm **both** the art **and
+   the music** are licensed for commercial use — the track is now user-supplied, so
+   clearing its rights (royalty-free / owned / properly licensed) is the user's
+   responsibility; remind them if there's any doubt.
 
 ## Caption rules (Korean)
 - Structure: a short re-cite/echo of one wish → one understated empathetic line
@@ -147,14 +146,15 @@ on-screen name is the public, wisher-chosen signature already shown on the site.
 named wishes get a warm-gold `— 이름` attribution line (anonymous show none) ·
 **static frame** (no pan) · film grain + vignette · brand handle `tree-of-wishes.fyi` ·
 **tree** = warm wish-lights rising · **columbarium** = cool motes drifting down ·
-original lo-fi soundtrack.
+user-supplied soundtrack (the reel loops to fit it).
 
 ## Notes / caveats
 - Reference look the user likes: lofi pixel landscapes/cities/interiors at dusk
   (see their `~/Downloads`). Match that *aesthetic* when choosing art.
 - Font `static/fonts/Galmuri11.ttf` is OFL (commercial-OK), bundled with a NOTICE.
-- Music: `scripts/lofi.py` synthesizes original Rhodes/bass/beat/pad + vinyl hiss
-  (no samples, no licensing). 3 candidates per run; `--candidate cN` re-renders one.
+- Music is **user-supplied** — the reel is looped (`ffmpeg -stream_loop`) to the
+  track's length. `scripts/lofi.py` (original lo-fi synth) still exists if the user
+  ever wants a generated track instead, but it is no longer the default path.
 - The renderer fetches wishes over HTTP from a **private, token-gated** endpoint
   (`/api/reel/wishes`) — **no DB, runs on any machine** with the repo + `ffmpeg`
   + `pillow`/`numpy`. Requires `REEL_API_TOKEN` in the environment, matching the
