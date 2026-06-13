@@ -361,24 +361,44 @@ body { min-height: 100vh; font-family: var(--font); background: var(--bg); color
    wish keeps its white "fulfilled" colour even when it's also new. */
 .ff-new .ff-label:not(.ff-label-fulfilled) { color: var(--ff-new); opacity: 0.85; text-shadow: 0 0 6px rgba(143, 209, 74, 0.6); }
 
-/* Near-expiry dying visualization */
+/* Near-expiry visualization — a Columbarium-violet tone (purple = where the wish
+   is headed) kept clear of the warm amber "active", white-gold "fulfilled", and
+   pink spring-seasonal glyphs + a distinct stuttering blink (see
+   ff-flicker-expiring). Labels keep full readability: no opacity fade, so the
+   title under the glyph stays legible. */
 .ff-dying .ff-glyph.ff-active {
-  color: #c07018;
+  color: #9170cc;
   text-shadow:
-    0 0 5px rgba(190, 100, 20, 0.55),
-    0 0 12px rgba(170, 75, 10, 0.35),
-    0 0 24px rgba(140, 55, 5, 0.18);
+    0 0 5px  rgba(124, 88, 204, 0.55),
+    0 0 12px rgba(104, 72, 184, 0.35),
+    0 0 24px rgba(88, 60, 160, 0.18);
 }
-.ff-dying .ff-label { color: #c07018; opacity: 0.5; }
+.ff-dying .ff-label { color: #a888d8; }
 
 .ff-critical .ff-glyph.ff-active {
-  color: #904010;
-  opacity: 0.6;
+  color: #ac8ce8;
   text-shadow:
-    0 0 5px rgba(140, 55, 10, 0.45),
-    0 0 12px rgba(120, 35, 5, 0.25);
+    0 0 5px  rgba(150, 112, 230, 0.6),
+    0 0 12px rgba(128, 92, 208, 0.4),
+    0 0 24px rgba(108, 78, 180, 0.2);
 }
-.ff-critical .ff-label { color: #904010; opacity: 0.35; }
+.ff-critical .ff-label { color: #c0a6f0; }
+
+/* Expiring wishes blink with a distinct stuttering double-pulse instead of the
+   normal smooth wander — the cue that flags an imminent move. Kept gentle (floor
+   ~0.55) so it reads as a soft flutter, not a jarring strobe. The JS-set
+   --flicker-dur (faster for critical) controls how often it repeats. */
+.ff-dying .ff-glyph,
+.ff-critical .ff-glyph { animation-name: ff-flicker-expiring; }
+
+@keyframes ff-flicker-expiring {
+  0%   { opacity: 1.00; }
+  12%  { opacity: 0.58; }
+  22%  { opacity: 0.90; }
+  32%  { opacity: 0.55; }
+  44%  { opacity: 1.00; }
+  100% { opacity: 1.00; }
+}
 
 /* ─── Seasonal firefly color overrides ───────────────────────────────────────── */
 body.season-spring {
@@ -634,7 +654,7 @@ body.season-winter .ff-popular .ff-glyph {
 }
 .modal-status.active    { background: rgba(50,168,106,0.15); color: #44cc7a; }
 .modal-status.fulfilled { background: rgba(180,150,0,0.12); color: #8a6800; }
-.modal-status.dead      { background: rgba(100,80,140,0.15); color: #7060a8; }
+.modal-status.expiring  { background: rgba(124,88,204,0.16); color: #ac8ce8; }
 
 .modal-text { font-size: 15px; line-height: 1.65; white-space: pre-wrap; word-break: break-word; }
 .modal-name { font-size: 12px; color: var(--text-muted); font-style: italic; }

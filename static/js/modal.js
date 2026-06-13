@@ -100,11 +100,29 @@ class WishModal {
 
   _renderMain(wish) {
     const body = this.el.querySelector('.modal-body');
-    const statusLabel = {
+    // The Columbarium holds only one state (dead), so a status chip there would be
+    // redundant — only tree wishes (active/fulfilled, or an expiring countdown) get one.
+    let statusLabel = {
       active: i18n.t('wish.status.active'),
       fulfilled: i18n.t('wish.status.fulfilled'),
-      dead: i18n.t('wish.status.dead'),
-    }[wish.status] || wish.status;
+    }[wish.status] || '';
+    let statusClass = wish.status;
+
+    // Expiring active wishes (≤7 days left) show a countdown to their Columbarium
+    // move instead of the plain "active" chip, so a clicker understands the blink.
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const dueDate = wish.due_date ? new Date(wish.due_date + 'T00:00:00') : null;
+    const daysLeft = dueDate ? Math.round((dueDate - today) / 86400000) : null;
+    if (wish.status === 'active' && daysLeft !== null && daysLeft <= 7) {
+      // The lazy sweep moves a wish only once its due_date has *passed*
+      // (due_date < today), i.e. at the start of the day after the due date —
+      // so the actual move is (daysLeft + 1) days away, not daysLeft.
+      const moveInDays = daysLeft + 1;
+      statusLabel = moveInDays >= 2  ? i18n.t('wish.status.expiring').replace('{n}', moveInDays)
+                  : moveInDays === 1 ? i18n.t('wish.status.expiringTomorrow')
+                  :                    i18n.t('wish.status.expiringSoon');
+      statusClass = 'expiring';
+    }
 
     const dueStr      = wish.due_date    ? new Date(wish.due_date).toLocaleDateString()    : '—';
     const createdStr  = wish.created_at  ? new Date(wish.created_at).toLocaleDateString()  : '—';
@@ -133,8 +151,12 @@ class WishModal {
     // creators can unlock with their password and edit/delete (tree and columbarium alike).
     const showUnlock = !this._isOwner && !this._isAdmin;
 
+    const statusHtml = statusLabel
+      ? `<div class="modal-status ${statusClass}">${statusLabel}</div>`
+      : '';
+
     body.innerHTML = `
-      <div class="modal-status ${wish.status}">${statusLabel}</div>
+      ${statusHtml}
       <div class="modal-text">${_esc(wish.text)}</div>
       ${wish.name ? `<div class="modal-name">— ${_esc(wish.name)}</div>` : ''}
       <div class="modal-meta">
