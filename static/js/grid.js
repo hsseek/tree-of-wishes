@@ -25,15 +25,24 @@ class WishPopover {
     this._hideTimer = null;
   }
 
-  show(wish, anchorEl) {
+  show(wish, anchorEl, state) {
     clearTimeout(this._hideTimer);
 
-    const statusMap = { active: '✦ Active', fulfilled: '✦ Fulfilled', dead: '◈ Passed' };
+    // A plain active wish gets no status line — "✦ Active" carried no information.
+    // "new" and "expiring" reuse the active wish.status but carry their own label
+    // and colour; "new" keeps the active colour, so it shares that CSS class.
+    const statusInfo = {
+      new:       { cls: 'active',    label: i18n.t('popover.status.new', 'New') },
+      expiring:  { cls: 'expiring',  label: i18n.t('popover.status.expiring', 'Moves to Columbarium soon') },
+      fulfilled: { cls: 'fulfilled', label: i18n.t('popover.status.fulfilled', '✦ Fulfilled') },
+      dead:      { cls: 'dead',      label: i18n.t('popover.status.dead', '◈ Passed') },
+    };
+    const info = statusInfo[state || wish.status];
     const dueStr = wish.due_date ? new Date(wish.due_date + 'T00:00:00').toLocaleDateString() : '—';
     const preview = wish.text.length > 180 ? wish.text.slice(0, 180) + '…' : wish.text;
 
     this.el.innerHTML = `
-      <div class="pop-status ${wish.status}">${statusMap[wish.status] || wish.status}</div>
+      ${info ? `<div class="pop-status ${info.cls}">${info.label}</div>` : ''}
       ${wish.name ? `<div class="pop-name">— ${_escHtml(wish.name)}</div>` : ''}
       <div class="pop-text">${_escHtml(preview)}</div>
       <div class="pop-meta">
@@ -222,8 +231,16 @@ class FireflyCanvas {
         </div>
       </div>`;
 
+    // The hover preview's status line mirrors the glyph's visual state, which
+    // the bare wish.status ('active'/'fulfilled') doesn't capture: "new" and
+    // "expiring" are both active wishes that simply look different.
+    const popoverState = fulfilled               ? 'fulfilled'
+                       : isNew                    ? 'new'
+                       : (isCritical || isDying)  ? 'expiring'
+                       :                            'active';
+
     wrap.addEventListener('click', () => this.onOpen(wish));
-    wrap.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') this.popover.show(wish, wrap); });
+    wrap.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') this.popover.show(wish, wrap, popoverState); });
     wrap.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') this.popover.hide(); });
 
     return wrap;

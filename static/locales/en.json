@@ -83,6 +83,11 @@
   "wish.status.expiringSoon": "Moving to Columbarium soon",
   "wish.status.fulfilled": "Fulfilled ✦",
 
+  "popover.status.new": "New",
+  "popover.status.expiring": "Moves to Columbarium soon",
+  "popover.status.fulfilled": "✦ Fulfilled",
+  "popover.status.dead": "◈ Passed",
+
   "wish.downloadAttachment": "Download attachment",
   "wish.viewAttachment": "View attachment",
 
@@ -97,8 +102,12 @@
   "wish.markUnfulfilled": "Mark as not fulfilled",
   "wish.save": "Save",
   "wish.saving": "Saving…",
-  "wish.delete": "Delete wish",
+  "wish.delete": "Delete",
   "wish.confirmDelete": "Delete this wish permanently?",
+  "wish.letGo": "Let go",
+  "wish.letGoHint": "Move this wish to the Columbarium now, before its due date",
+  "wish.confirmLetGo": "Let this wish go to the Columbarium? It will leave the tree.",
+  "wish.letGoDone": "Moved to the Columbarium",
   "wish.likeBtn": "Like",
   "wish.alreadyLiked": "Liked",
   "wish.unlikeBtn": "Unlike",
@@ -137,6 +146,7 @@
   "shortcuts.search": "Focus search",
   "shortcuts.random": "Open a random wish",
   "shortcuts.help": "Show this help",
+  "shortcuts.placeWish": "Place a wish (in the Make a Wish form)",
   "shortcuts.hint": "Shortcuts work when you're not typing in a field.",
   "shortcuts.noWishes": "No wishes to open yet."
 }

@@ -32,6 +32,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('new-wish-overlay')?.classList.add('open');
   });
 
+  // Keyboard shortcuts for the Make a Wish modal — bound globally (not via
+  // _initShortcuts, which ignores keys while a form field is focused) so they
+  // work while typing the wish.
+  document.addEventListener('keydown', e => {
+    if (!document.getElementById('new-wish-overlay')?.classList.contains('open')) return;
+    if (e.key === 'Escape') {
+      closeNewWish();
+    } else if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      // Ctrl+Enter (Cmd+Return on Mac) places the wish from any field.
+      // requestSubmit() runs native validation and fires the form's submit handler.
+      e.preventDefault();
+      document.getElementById('new-wish-form')?.requestSubmit();
+    }
+  });
+
   // Search
   document.getElementById('search-form')?.addEventListener('submit', async e => {
     e.preventDefault();
@@ -269,11 +284,14 @@ function _toggleShortcutsHelp(force) {
 }
 
 function _buildShortcutsHelp() {
+  const isMac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent || '');
+  const placeWishKey = isMac ? '⌘ Return' : 'Ctrl+Enter';
   const rows = [
     ['j',   i18n.t('shortcuts.older')],
     ['k',   i18n.t('shortcuts.younger')],
     ['r',   i18n.t('shortcuts.random')],
     ['/',   i18n.t('shortcuts.search')],
+    [placeWishKey, i18n.t('shortcuts.placeWish')],
     ['Esc', i18n.t('shortcuts.close')],
     ['?',   i18n.t('shortcuts.help')],
   ].map(([key, label]) =>

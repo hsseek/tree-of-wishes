@@ -12,7 +12,16 @@ class WishModal {
 
     this.el.querySelector('.modal-close').addEventListener('click', () => this.close());
     this.backdrop.addEventListener('click', () => this.close());
-    document.addEventListener('keydown', e => { if (e.key === 'Escape') this.close(); });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') { this.close(); return; }
+      // Ctrl+Enter (Cmd+Return on Mac) saves while the edit panel is open —
+      // btn-save exists only in edit mode, so it doubles as the guard.
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && this.isOpen
+          && document.getElementById('btn-save')) {
+        e.preventDefault();
+        this._doSave();
+      }
+    });
 
     // On-screen navigation mirrors the j/k/r keyboard shortcuts for touch users.
     // Left = previous (j, older); right = next (k, younger).
@@ -263,6 +272,9 @@ class WishModal {
     const panel = document.getElementById('edit-panel');
     const wish = this._currentWish;
     const isFulfilled = wish.status === 'fulfilled';
+    // "Let go" retires an active wish to the Columbarium early — only meaningful
+    // for a wish still living on the tree (not one already fulfilled or interred).
+    const showLetGo = wish.status === 'active' && wish.board === 'tree';
     panel.style.display = '';
 
     const showAttachment = this._isOwner || this._isAdmin;
@@ -287,12 +299,14 @@ class WishModal {
           <button id="btn-fulfill" class="btn-secondary">
             ${isFulfilled ? i18n.t('wish.markUnfulfilled') : i18n.t('wish.markFulfilled')}
           </button>
+          ${showLetGo ? `<button id="btn-letgo" class="btn-secondary" title="${i18n.t('wish.letGoHint')}">${i18n.t('wish.letGo')}</button>` : ''}
           <button id="btn-delete" class="btn-danger">${i18n.t('wish.delete')}</button>
         </div>
       </div>`;
 
     document.getElementById('btn-save').addEventListener('click', () => this._doSave());
     document.getElementById('btn-fulfill')?.addEventListener('click', () => this._doFulfill());
+    document.getElementById('btn-letgo')?.addEventListener('click', () => this._doFail());
     document.getElementById('btn-delete').addEventListener('click', () => this._doDelete());
     document.getElementById('btn-remove-attachment')?.addEventListener('click', () => this._doRemoveAttachment());
   }
@@ -355,6 +369,26 @@ class WishModal {
       document.querySelector('.unlock-section')?.remove();
       this._renderEditPanel();
       _showToast('Updated!', 'success');
+      if (window.wishGrid) window.wishGrid.init();
+    } else {
+      const err = await resp.json().catch(() => ({}));
+      _showToast(err.detail || i18n.t('error.generic'), 'error');
+    }
+  }
+
+  async _doFail() {
+    if (!confirm(i18n.t('wish.confirmLetGo'))) return;
+    // Send no body — password rides in the query (proxies mangle empty bodies).
+    let endpoint = `/api/wishes/${this._currentWish.id}/fail`;
+    if (this._storedPassword !== null) {
+      endpoint += `?password=${encodeURIComponent(this._storedPassword)}`;
+    }
+    const resp = await fetch(endpoint, { method: 'POST' });
+    if (resp.ok) {
+      // The wish has left the tree for the Columbarium, so close rather than re-render.
+      this._currentWish = await resp.json();
+      _showToast(i18n.t('wish.letGoDone'), 'success');
+      this.close();
       if (window.wishGrid) window.wishGrid.init();
     } else {
       const err = await resp.json().catch(() => ({}));

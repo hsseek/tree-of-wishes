@@ -83,6 +83,11 @@
   "wish.status.expiringSoon": "곧 봉안당 이전",
   "wish.status.fulfilled": "이루어짐 ✦",
 
+  "popover.status.new": "새 소원",
+  "popover.status.expiring": "곧 봉안당으로 이전",
+  "popover.status.fulfilled": "✦ 이루어짐",
+  "popover.status.dead": "◈ 잠든 소원",
+
   "wish.downloadAttachment": "첨부 파일 다운로드",
   "wish.viewAttachment": "첨부 파일 보기",
 
@@ -97,8 +102,12 @@
   "wish.markUnfulfilled": "아직 이루어지지 않았어요",
   "wish.save": "저장",
   "wish.saving": "저장 중…",
-  "wish.delete": "소원 삭제",
+  "wish.delete": "삭제",
   "wish.confirmDelete": "이 소원을 영구적으로 삭제할까요?",
+  "wish.letGo": "떠나보내기",
+  "wish.letGoHint": "기한 전이라도 이 소원을 봉안당으로 옮깁니다",
+  "wish.confirmLetGo": "이 소원을 봉안당으로 떠나보낼까요? 나무에서 사라집니다.",
+  "wish.letGoDone": "봉안당으로 옮겼습니다",
   "wish.likeBtn": "좋아요",
   "wish.alreadyLiked": "좋아요 완료",
   "wish.unlikeBtn": "좋아요 취소",
@@ -137,6 +146,7 @@
   "shortcuts.search": "검색창으로 이동",
   "shortcuts.random": "무작위 소원 보기",
   "shortcuts.help": "이 도움말 보기",
+  "shortcuts.placeWish": "소원 달기 (소원 남기기 창에서)",
   "shortcuts.hint": "입력 중이 아닐 때 단축키를 사용할 수 있습니다.",
   "shortcuts.noWishes": "아직 열 수 있는 소원이 없습니다."
 }

@@ -455,7 +455,8 @@ body.season-winter .ff-popular .ff-glyph {
   text-transform: uppercase; margin-bottom: 4px;
 }
 .pop-status.active    { color: #44cc7a; }
-.pop-status.fulfilled { color: #9a7800; }
+.pop-status.expiring  { color: #ac8ce8; }
+.pop-status.fulfilled { color: var(--ff-fulfilled); }
 .pop-status.dead      { color: #7060a8; }
 
 .pop-name { color: var(--text-muted); font-style: italic; font-size: 12px; margin-bottom: 5px; }
@@ -653,7 +654,7 @@ body.season-winter .ff-popular .ff-glyph {
   letter-spacing: 1px; padding: 2px 8px; border-radius: 2px; text-transform: uppercase;
 }
 .modal-status.active    { background: rgba(50,168,106,0.15); color: #44cc7a; }
-.modal-status.fulfilled { background: rgba(180,150,0,0.12); color: #8a6800; }
+.modal-status.fulfilled { background: rgba(255,248,200,0.12); color: var(--ff-fulfilled); }
 .modal-status.expiring  { background: rgba(124,88,204,0.16); color: #ac8ce8; }
 
 .modal-text { font-size: 15px; line-height: 1.65; white-space: pre-wrap; word-break: break-word; }

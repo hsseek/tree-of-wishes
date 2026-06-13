@@ -19,7 +19,7 @@ from sqlalchemy import text as sa_text
 from ..database import get_db
 from ..models import Wish, WishStatus, effective_age_expr
 from ..services.analytics import record_dwell
-from ..services.capacity import ensure_tree_capacity
+from ..services.capacity import ensure_tree_capacity, ensure_columbarium_capacity
 from ..services.email import send_email
 from ..services.rate_limit import (
     check_creation_rate, record_creation,
@@ -494,6 +494,31 @@ def unfulfill_wish(
         raise HTTPException(409, "Wish is not fulfilled")
     wish.status = WishStatus.active
     wish.fulfilled_at = None
+    db.commit()
+    db.refresh(wish)
+    return _wish_to_dict(wish)
+
+
+# ─── Fail wish (move to Columbarium before its due date) ──────────────────────
+
+@router.post("/wishes/{wish_id}/fail")
+def fail_wish(
+    wish_id: int,
+    request: Request,
+    password: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+):
+    wish = db.query(Wish).filter(Wish.id == wish_id, Wish.board == "tree").first()
+    if not wish:
+        raise HTTPException(404, "Wish not found")
+    _check_auth(wish, password, request, db)
+    if wish.status != WishStatus.active:
+        raise HTTPException(409, "Only an active wish can be moved to the Columbarium")
+    # Retire an active wish early, mirroring the lazy expiry sweep
+    # (status → dead, board → columbarium) but without waiting for the due_date.
+    ensure_columbarium_capacity(db)
+    wish.status = WishStatus.dead
+    wish.board = "columbarium"
     db.commit()
     db.refresh(wish)
     return _wish_to_dict(wish)
