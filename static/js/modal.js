@@ -293,6 +293,13 @@ class WishModal {
     const showLetGo = wish.status === 'active' && wish.board === 'tree';
     panel.style.display = '';
 
+    // In edit mode the original message, meta, stats and view/like actions above
+    // are just noise — hide every body element that sits above the edit panel.
+    // _renderMain rebuilds the body from scratch each open, so this resets cleanly.
+    for (let sib = panel.previousElementSibling; sib; sib = sib.previousElementSibling) {
+      sib.style.display = 'none';
+    }
+
     const showAttachment = this._isOwner || this._isAdmin;
     const attachmentControls = showAttachment ? `
       <div class="edit-row">
@@ -306,7 +313,6 @@ class WishModal {
 
     panel.innerHTML = `
       <div class="edit-panel">
-        <h4 class="edit-title">Edit</h4>
         <label class="field-label">${i18n.t('wish.editText')}</label>
         <textarea id="edit-text" class="edit-textarea" rows="4">${_esc(wish.text)}</textarea>
         ${attachmentControls}

@@ -82,7 +82,7 @@
   "wish.status.expiring": "{n}일 뒤 봉안당 이전",
   "wish.status.expiringTomorrow": "내일 봉안당 이전",
   "wish.status.expiringSoon": "곧 봉안당 이전",
-  "wish.status.fulfilled": "이루어짐 ✦",
+  "wish.status.fulfilled": "✦ 이루어짐",
 
   "popover.status.new": "새 소원",
   "popover.status.expiring": "곧 봉안당으로 이전",

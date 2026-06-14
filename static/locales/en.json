@@ -82,7 +82,7 @@
   "wish.status.expiring": "Moves to Columbarium in {n} days",
   "wish.status.expiringTomorrow": "Moves to Columbarium tomorrow",
   "wish.status.expiringSoon": "Moving to Columbarium soon",
-  "wish.status.fulfilled": "Fulfilled ✦",
+  "wish.status.fulfilled": "✦ Fulfilled",
 
   "popover.status.new": "New",
   "popover.status.expiring": "Moves to Columbarium soon",
