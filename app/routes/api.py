@@ -7,10 +7,10 @@ from pathlib import Path
 from typing import Optional
 
 from fastapi import (
-    APIRouter, BackgroundTasks, Depends, HTTPException, Request,
+    APIRouter, BackgroundTasks, Depends, HTTPException, Request, Response,
     UploadFile, File, Form, Query,
 )
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse
 import bcrypt
 from sqlalchemy.orm import Session
 from sqlalchemy import or_, asc, desc
@@ -651,7 +651,9 @@ def track_dwell(s: int = Query(0, ge=0)):
     """Record one time-on-page sample (seconds). Called via navigator.sendBeacon,
     so it returns 204 and never blocks the client."""
     record_dwell(s)
-    return JSONResponse(status_code=204, content=None)
+    # 204 must carry no body — a JSON body (even `null`) makes uvicorn raise
+    # "Response content longer than Content-Length".
+    return Response(status_code=204)
 
 
 # ─── Health ───────────────────────────────────────────────────────────────────

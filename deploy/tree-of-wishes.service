@@ -1,0 +1,18 @@
+[Unit]
+Description=Tree of Wishes
+After=network.target
+
+[Service]
+User=sun
+WorkingDirectory=/home/sun/PythonProjects/tree-of-wishes
+EnvironmentFile=/home/sun/PythonProjects/tree-of-wishes/.env
+# Self-heal the venv before each start (rebuilds if a Python upgrade broke it).
+ExecStartPre=/home/sun/PythonProjects/tree-of-wishes/scripts/ensure_venv.sh
+ExecStart=/home/sun/PythonProjects/tree-of-wishes/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8001
+Restart=always
+RestartSec=5
+# Allow time for a venv rebuild (pip install) on first start after an upgrade.
+TimeoutStartSec=600
+
+[Install]
+WantedBy=multi-user.target
