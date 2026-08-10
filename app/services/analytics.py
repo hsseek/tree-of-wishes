@@ -6,6 +6,7 @@ nothing). Time-on-page is rolled up into a single row per day.
 """
 import threading
 from datetime import datetime
+from urllib.parse import urlsplit
 
 from sqlalchemy.exc import IntegrityError
 
@@ -18,6 +19,84 @@ TRACKED_PATHS = {"/tree", "/columbarium", "/about", "/my-wishes", "/settings"}
 # Upper bound on a single time-on-page sample (seconds). Caps garbage from tabs
 # left open for hours so they don't skew the average.
 MAX_DWELL_SECONDS = 1800
+
+# Referrer hosts worth collapsing into one stable tag. Matched against the host
+# with any leading "www."/"m."/"l."/"lm." stripped, either exactly or as a
+# suffix (so "search.naver.com" and "co.search.naver.com" both hit "naver.com").
+# Hosts not listed here are kept verbatim, which surfaces the long tail.
+_REFERRER_TAGS = {
+    "instagram.com": "instagram",
+    "threads.com": "threads",
+    "threads.net": "threads",
+    "facebook.com": "facebook",
+    "fb.com": "facebook",
+    "google.com": "google",
+    "naver.com": "naver",
+    "daum.net": "daum",
+    "kakao.com": "kakao",
+    "kakaocorp.com": "kakao",
+    "t.co": "x",
+    "x.com": "x",
+    "twitter.com": "x",
+    "youtube.com": "youtube",
+    "youtu.be": "youtube",
+    "reddit.com": "reddit",
+    "bing.com": "bing",
+    "duckduckgo.com": "duckduckgo",
+    "chatgpt.com": "chatgpt",
+    "chat.openai.com": "chatgpt",
+    "claude.ai": "claude",
+    "perplexity.ai": "perplexity",
+    "linkedin.com": "linkedin",
+    "pinterest.com": "pinterest",
+    "tiktok.com": "tiktok",
+    "discord.com": "discord",
+    "t.me": "telegram",
+}
+
+# Sub-domain prefixes that carry no attribution meaning. "l."/"lm." are the
+# Meta link shims (l.instagram.com, lm.facebook.com).
+_STRIP_PREFIXES = ("www.", "m.", "l.", "lm.")
+
+
+def clean_source(raw: str | None) -> str | None:
+    """Normalise a source value to a short, safe tag; None if absent or empty.
+    Permits dots so a bare referrer host ("someblog.tistory.com") survives."""
+    if not raw:
+        return None
+    tag = "".join(c for c in raw.lower() if c.isalnum() or c in "-_.")[:40]
+    return tag.strip(".") or None
+
+
+def classify_referrer(referrer: str | None, self_host: str | None) -> str | None:
+    """Map a referring URL to a source tag. Returns None for absent, malformed,
+    or same-site referrers — a visitor arriving from our own pages tells us
+    nothing about where they originally came from, so it counts as direct."""
+    if not referrer:
+        return None
+    try:
+        host = (urlsplit(referrer).hostname or "").lower()
+    except ValueError:
+        return None
+    if not host:
+        return None
+
+    for prefix in _STRIP_PREFIXES:
+        if host.startswith(prefix):
+            host = host[len(prefix):]
+            break
+
+    if self_host and (host == self_host or host.endswith(f".{self_host}")):
+        return None
+
+    # Google's country domains (google.co.kr, google.de, ...) all mean "google".
+    if host == "google" or host.startswith("google."):
+        return "google"
+
+    for known, tag in _REFERRER_TAGS.items():
+        if host == known or host.endswith(f".{known}"):
+            return tag
+    return clean_source(host)
 
 _lock = threading.Lock()
 _seen_day = None          # the day _seen_keys is valid for

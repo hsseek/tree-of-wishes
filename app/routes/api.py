@@ -18,7 +18,9 @@ from sqlalchemy import or_, asc, desc
 from sqlalchemy import text as sa_text
 from ..database import get_db
 from ..models import Wish, WishStatus, effective_age_expr
-from ..services.analytics import record_dwell
+from ..services.analytics import (
+    TRACKED_PATHS, classify_referrer, clean_source, record_dwell, record_visit,
+)
 from ..services.capacity import ensure_tree_capacity, ensure_columbarium_capacity
 from ..services.email import send_email
 from ..services.rate_limit import (
@@ -645,6 +647,41 @@ def set_language(
 
 
 # ─── Analytics ──────────────────────────────────────────────────────────────
+
+@router.post("/track/visit")
+def track_visit(
+    request: Request,
+    path: str = Query(""),
+    ref: str = Query(""),
+    src: str = Query(""),
+):
+    """Record one visit, called from the page's JavaScript. Requiring a JS ping
+    is the bot filter: crawlers fetch the HTML but don't run scripts.
+
+    A visitor must already carry the ``tow_vid`` cookie the page response set
+    (or be logged in). Minting an id here would defeat the filter, since any
+    cookie-less client could count itself repeatedly.
+
+    Attribution is first-touch per visitor per day, preferring an explicit
+    ``?src=`` tag over the referrer — campaign links are deliberate, and
+    in-app browsers frequently strip or rewrite the referrer.
+    """
+    if path not in TRACKED_PATHS:
+        return Response(status_code=204)
+
+    user_id = request.session.get("user_id")
+    if user_id:
+        visitor_key, registered = f"u{user_id}", True
+    else:
+        vid = request.cookies.get("tow_vid")
+        if not vid:
+            return Response(status_code=204)
+        visitor_key, registered = f"a{vid}", False
+
+    source = clean_source(src) or classify_referrer(ref, request.url.hostname)
+    record_visit(visitor_key, registered, source)
+    return Response(status_code=204)
+
 
 @router.post("/track/dwell")
 def track_dwell(s: int = Query(0, ge=0)):

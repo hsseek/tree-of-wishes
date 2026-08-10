@@ -1,8 +1,25 @@
-/* Time-on-page beacon. Sends one sample (seconds on page) when the page is
-   hidden or unloaded. Resource-light: no heartbeats, fires at most once. */
+/* Visit + time-on-page beacons. The visit ping doubles as the bot filter:
+   crawlers fetch the HTML but never run this script, so they aren't counted. */
 (function () {
   var start = Date.now();
   var sent = false;
+
+  /* One visit ping per page load. The server deduplicates to one visit per
+     visitor per day and reads the referrer for traffic-source attribution. */
+  function reportVisit() {
+    if (!navigator.sendBeacon) return;
+    var src = '';
+    try {
+      src = new URLSearchParams(window.location.search).get('src') || '';
+    } catch (e) { /* older browser: fall back to referrer-only attribution */ }
+    navigator.sendBeacon(
+      '/api/track/visit'
+        + '?path=' + encodeURIComponent(window.location.pathname)
+        + '&ref=' + encodeURIComponent(document.referrer || '')
+        + '&src=' + encodeURIComponent(src)
+    );
+  }
+  reportVisit();
 
   function report() {
     if (sent) return;

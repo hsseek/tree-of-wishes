@@ -15,6 +15,11 @@
       <strong>{{ totals.registrations }}</strong> new registrations,
       <strong>{{ totals.new_wishes }}</strong> new wishes.
     </p>
+    <p class="analytics-note">
+      Visits before 2026-08-11 counted any page fetch, so crawlers inflated them
+      roughly 4×. From that date a visit requires the page's JavaScript to run,
+      which excludes bots — expect a one-off drop, not a loss of traffic.
+    </p>
 
     {% if sources %}
     <div class="source-breakdown">
@@ -67,7 +72,11 @@
 <style>
   /* Wider than the default 520px content-panel so all seven columns fit. */
   .analytics-panel { max-width: 860px; }
-  .analytics-summary { margin-bottom: 1.25rem; }
+  .analytics-summary { margin-bottom: 0.5rem; }
+  .analytics-note {
+    margin-bottom: 1.25rem; font-size: 0.85rem;
+    opacity: 0.65; line-height: 1.5; max-width: 62ch;
+  }
   /* Horizontal-scroll fallback on narrow screens instead of clipped columns. */
   .analytics-table-wrap { overflow-x: auto; }
   .analytics-table {

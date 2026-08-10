@@ -12,7 +12,7 @@ from .models import *  # ensure all models are registered before create_all
 from .routes.api import router as api_router
 from .routes.auth import router as auth_router
 from .routes.pages import router as pages_router
-from .services.analytics import TRACKED_PATHS, record_visit
+from .services.analytics import TRACKED_PATHS
 
 Base.metadata.create_all(bind=engine)
 run_migrations()
@@ -21,33 +21,24 @@ run_migrations()
 _VID_MAX_AGE = 365 * 24 * 60 * 60
 
 
-def _clean_source(raw: str | None) -> str | None:
-    """Normalise a ?src= value to a short, safe tag (e.g. 'ig'); None if absent."""
-    if not raw:
-        return None
-    tag = "".join(c for c in raw.lower() if c.isalnum() or c in "-_")[:20]
-    return tag or None
-
-
 async def track_visit(request: Request, call_next):
+    """Issue the anonymous visitor cookie on tracked page loads. The visit
+    itself is *not* recorded here — /api/track/visit records it once the page's
+    JavaScript confirms a real browser. Counting on the bare request instead
+    minted a fresh UUID for every cookie-less client, which let crawlers inflate
+    unique-visitor counts several times over."""
     response = await call_next(request)
     try:
-        if request.method == "GET" and request.url.path in TRACKED_PATHS:
-            user_id = request.session.get("user_id")
-            new_vid = None
-            if user_id:
-                visitor_key, registered = f"u{user_id}", True
-            else:
-                vid = request.cookies.get("tow_vid")
-                if not vid:
-                    vid = new_vid = uuid4().hex
-                visitor_key, registered = f"a{vid}", False
-            record_visit(visitor_key, registered, _clean_source(request.query_params.get("src")))
-            if new_vid:
-                response.set_cookie(
-                    "tow_vid", new_vid, max_age=_VID_MAX_AGE,
-                    httponly=True, samesite="lax",
-                )
+        if (
+            request.method == "GET"
+            and request.url.path in TRACKED_PATHS
+            and not request.session.get("user_id")
+            and not request.cookies.get("tow_vid")
+        ):
+            response.set_cookie(
+                "tow_vid", uuid4().hex, max_age=_VID_MAX_AGE,
+                httponly=True, samesite="lax",
+            )
     except Exception:
         pass  # tracking must never break a page load
     return response
