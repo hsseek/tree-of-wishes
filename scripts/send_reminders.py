@@ -52,19 +52,19 @@ def _email_for(wish: Wish, language: str) -> tuple[str, str]:
         subject = "[Tree of Wishes] Your wish's day has arrived"
         body = (
             "The day you wished for is here. Did it come true?\n\n"
-            f"Wish : {snippet}\n"
-            f"Link : {link}\n\n"
             "Open your wish, and if it came true, mark it as fulfilled.\n"
-            "Your fulfilled wish makes the tree shine brighter. 🌳✨"
+            "Your fulfilled wish makes the tree shine brighter. 🌳✨\n\n"
+            f"Wish: {snippet}\n"
+            f"Link: {link}"
         )
     else:
         subject = "[소원의 나무] 소원의 기한이 되었어요"
         body = (
             "소원을 빌었던 날이 왔어요. 그 소원, 이루어졌나요?\n\n"
-            f"소원 : {snippet}\n"
-            f"링크 : {link}\n\n"
             "아래 링크에서 소원을 열고, 이루어졌다면 '이루어졌어요'로 표시해 보세요.\n"
-            "당신의 이루어진 소원이 나무를 더 빛나게 합니다. 🌳✨"
+            "당신의 이루어진 소원이 나무를 더 빛나게 합니다. 🌳✨\n\n"
+            f"소원: {snippet}\n"
+            f"링크: {link}"
         )
     return subject, body
 
